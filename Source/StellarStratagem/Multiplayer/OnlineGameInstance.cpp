@@ -23,9 +23,9 @@ void UOnlineGameInstance::CreateSession()
 void UOnlineGameInstance::OnDestroyOldSessionComplete(FName SessionName, bool Successful)
 {
 	if (Successful)
-		UE_LOG(LogTemp, Warning, TEXT("OLD SESSION DESTROYED"))
+		GEngine->AddOnScreenDebugMessage(0, 30.f, FColor::Red, TEXT("OLD SESSION DESTROYED"));
 	else
-		UE_LOG(LogTemp, Warning, TEXT("NO OLD SESSION DESTROYED"))
+		GEngine->AddOnScreenDebugMessage(0, 30.f, FColor::Red, TEXT("NO OLD SESSION DESTROYED"));
 
 	//Create session settings
 	TSharedPtr<FOnlineSessionSettings> SessionSettings = MakeShareable(new FOnlineSessionSettings());
@@ -46,13 +46,13 @@ void UOnlineGameInstance::OnDestroyOldSessionComplete(FName SessionName, bool Su
 	//Handle session creation success
 	if (Succeeded)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SESSION CREATED SUCCESSFULLY"))
+		GEngine->AddOnScreenDebugMessage(0, 30.f, FColor::Red, TEXT("SESSION CREATED SUCCESSFULLY"));
 
 		//Go to lobby map
 		UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), LobbyMap, true, "listen");
 	}
 	else
-		UE_LOG(LogTemp, Warning, TEXT("FAILED TO CREATE SESSION"))
+		GEngine->AddOnScreenDebugMessage(0, 30.f, FColor::Red, TEXT("FAILED TO CREATE SESSION"));
 }
 
 #pragma endregion
@@ -76,9 +76,9 @@ void UOnlineGameInstance::FindSessions()
 	bool SearchStarted = SessionInterface->FindSessions(*GetWorld()->GetFirstLocalPlayerFromController()->GetPreferredUniqueNetId(), SessionSearchSettings.ToSharedRef());
 
 	if (SearchStarted)
-		UE_LOG(LogTemp, Warning, TEXT("SESSION SEARCH STARTED"))
+		GEngine->AddOnScreenDebugMessage(0, 30.f, FColor::Red, TEXT("SESSION SEARCH STARTED"));
 	else
-		UE_LOG(LogTemp, Warning, TEXT("SESSION SEARCH FAILED TO START"))
+		GEngine->AddOnScreenDebugMessage(0, 30.f, FColor::Red, TEXT("SESSION SEARCH FAILED TO START"));
 }
 
 void UOnlineGameInstance::OnFindSessionsComplete(bool Successful)
@@ -89,9 +89,10 @@ void UOnlineGameInstance::OnFindSessionsComplete(bool Successful)
 	//TODO JOIN A FOUND SESSION
 
 	if(Successful)
-		UE_LOG(LogTemp, Warning, TEXT("SESSION SEARCH FOUND %d SESSIONS"), SessionSearchSettings->SearchResults.Num())
+		GEngine->AddOnScreenDebugMessage(0, 30.f, FColor::Red, FString::Printf(TEXT("SESSION SEARCH FOUND %d SESSIONS"), SessionSearchSettings->SearchResults.Num()));
 	else
-		UE_LOG(LogTemp, Warning, TEXT("SESSION SEARCH FAILED"))
+		GEngine->AddOnScreenDebugMessage(0, 30.f, FColor::Red, TEXT("SESSION SEARCH FAILED"));
+
 }
 
 #pragma endregion
