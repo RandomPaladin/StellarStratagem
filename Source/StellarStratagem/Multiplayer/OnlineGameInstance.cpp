@@ -14,6 +14,10 @@ void UOnlineGameInstance::EnsureSetup()
 
 void UOnlineGameInstance::CreateSession()
 {
+	UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("78.82.114.1:7777")));
+
+	return;
+	
 	EnsureSetup();
 
 	//Ensure a session doesn't exist already. If it does, destroy it before making a new one
@@ -33,7 +37,7 @@ void UOnlineGameInstance::OnDestroyOldSessionComplete(FName SessionName, bool Su
 	SessionSettings->bAllowJoinInProgress = false;
 	SessionSettings->bAllowJoinViaPresence = true;
 	SessionSettings->bAllowJoinViaPresenceFriendsOnly = false;
-	SessionSettings->bIsDedicated = false;
+	SessionSettings->bIsDedicated = true;
 	SessionSettings->bUsesPresence = true;
 	SessionSettings->bIsLANMatch = false;
 	SessionSettings->bShouldAdvertise = true;
