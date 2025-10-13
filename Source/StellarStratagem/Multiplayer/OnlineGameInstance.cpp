@@ -14,7 +14,7 @@ void UOnlineGameInstance::EnsureSetup()
 
 void UOnlineGameInstance::CreateSession()
 {
-	UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("78.82.114.1:7777")));
+	UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("192.168.0.27:7777")));
 
 	return;
 	
