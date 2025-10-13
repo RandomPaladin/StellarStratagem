@@ -1,9 +1,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
 #include "GameManager.generated.h"
 
-class UActionBase;
+class AStellarPlayerController;
 
 UCLASS()
 class STELLARSTRATAGEM_API AGameManager : public AActor
@@ -14,13 +15,18 @@ class STELLARSTRATAGEM_API AGameManager : public AActor
 	int Turn;
 
 	UPROPERTY(VisibleAnywhere)
-	TArray<APlayerController*> Players;
+	TMap<AActor*, AStellarPlayerController*> Players;
 
 	UPROPERTY(VisibleAnywhere)
-	TArray<APlayerController*> AwaitedPlayers;
+	TArray<AActor*> AwaitedPlayers;
 
 public:
 	AGameManager();
-protected:
+	virtual bool IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const override;
 	virtual void BeginPlay() override;
+
+	void SetupGame();
+	void AddPlayer(AStellarPlayerController* Player);
+
+	auto GetPlayers() { return Players; }
 };

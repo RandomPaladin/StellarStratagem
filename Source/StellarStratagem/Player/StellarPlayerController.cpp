@@ -1,24 +1,20 @@
 #include "StellarPlayerController.h"
+#include "Kismet/GameplayStatics.h"
+#include "StellarStratagem/Gameplay/ServerManager.h"
 
 void AStellarPlayerController::BeginPlay()
 {
+	ServerManager = Cast<AServerManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AServerManager::StaticClass()));
+	
 	Super::BeginPlay();
-
-	if(IsLocalController())
-	{
-		auto Data = FActionData{8};
-		UE_LOG(LogTemp, Warning, TEXT("SENDING NUM %d"), Data.NumberTest);
-		SendAction(Data);
-	}
-}
-
-void AStellarPlayerController::Receive_Implementation()
-{
-	UE_LOG(LogTemp, Warning, TEXT("RECEIVED FROM SERVER"));
 }
 
 void AStellarPlayerController::SendAction_Implementation(const FActionData& ActionData)
 {
-	UE_LOG(LogTemp, Warning, TEXT("RECEIVED NUM %d"), ActionData.NumberTest);
-	Receive();
+	UE_LOG(LogTemp, Warning, TEXT("RECEIVED DATA %d"), ActionData.NumberTest);
+}
+
+void AStellarPlayerController::TryConnectToGame_Implementation(const FString& GameCode)
+{
+	ServerManager->TryConnectToGame(this, GameCode);
 }
