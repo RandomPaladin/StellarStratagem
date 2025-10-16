@@ -104,6 +104,14 @@ void AServerManager::TryLeaveGame(AStellarPlayerController* Player)
 	
 	//Remove player from game
 	Games[JoinedGameCode]->RemovePlayer(Player);
+
+	//If all players leave game, destroy game
+	if(Games[JoinedGameCode]->GetConnectedPlayers().Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GAME %s HAS NO CONNECTED PLAYERS, DESTROYING GAME"), *JoinedGameCode)
+		Games[JoinedGameCode]->Destroy();
+		Games.Remove(JoinedGameCode);
+	}
 }
 
 void AServerManager::OnGameSpawnComplete(AGameManager* Game) const
