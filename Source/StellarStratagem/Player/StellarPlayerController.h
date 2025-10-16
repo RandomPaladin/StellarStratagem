@@ -25,9 +25,9 @@ struct FPlayerData
 		Username = InUsername;
 	}
 
-	bool operator ==(const FPlayerData& item1, const FPlayerData& item2) const
+	bool operator ==(const FPlayerData& Other) const
 	{
-		return item1.Username == item2.Username;
+		return Username == Other.Username;
 	}
 };
 
@@ -48,7 +48,11 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 	void SendAction_Server(const FActionData& ActionData);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void TryConnectToGame_Server(const FString& GameCode);
+	void TryCreateGame_Server(const FString& GameCode);
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void TryJoinGame_Server(const FString& GameCode);
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void TryLeaveGame_Server();
 
 public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)

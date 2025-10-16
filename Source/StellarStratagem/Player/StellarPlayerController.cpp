@@ -18,7 +18,17 @@ void AStellarPlayerController::SendAction_Server_Implementation(const FActionDat
 	UE_LOG(LogTemp, Warning, TEXT("RECEIVED DATA %d"), ActionData.NumberTest);
 }
 
-void AStellarPlayerController::TryConnectToGame_Server_Implementation(const FString& GameCode)
+void AStellarPlayerController::TryCreateGame_Server_Implementation(const FString& GameCode)
 {
-	ServerManager->TryConnectToGame(this, GameCode);
+	ServerManager->TryCreateGame(this, GameCode);
+}
+
+void AStellarPlayerController::TryJoinGame_Server_Implementation(const FString& GameCode)
+{
+	ServerManager->TryJoinGame(this, GameCode);
+}
+
+void AStellarPlayerController::TryLeaveGame_Server_Implementation()
+{
+	ServerManager->TryLeaveGame(this);
 }

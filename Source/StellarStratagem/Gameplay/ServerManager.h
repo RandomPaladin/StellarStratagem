@@ -24,7 +24,9 @@ public:
 	AServerManager();
 	virtual void BeginPlay() override;
 
-	void TryConnectToGame(AStellarPlayerController* Player, const FString& GameCode);
+	void TryCreateGame(AStellarPlayerController* Player, const FString& GameCode);
+	void TryJoinGame(AStellarPlayerController* Player, const FString& GameCode);
+	void TryLeaveGame(AStellarPlayerController* Player);
 
 	UFUNCTION()
 	void OnGameSpawnComplete(AGameManager* Game) const;
