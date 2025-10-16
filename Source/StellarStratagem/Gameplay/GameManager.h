@@ -24,6 +24,9 @@ class STELLARSTRATAGEM_API AGameManager : public AActor
 	UPROPERTY(VisibleAnywhere)
 	TMap<AActor*, AStellarPlayerController*> ConnectedPlayers;
 
+	UPROPERTY()
+	bool GameStarted = false;
+	
 	UFUNCTION()
 	void OnRep_ConnectedPlayers() const;
 
@@ -40,8 +43,12 @@ public:
 	virtual void BeginPlay() override;
 
 	void AddPlayer(AStellarPlayerController* Player);
+	void RemovePlayer(AStellarPlayerController* Player);
 
-	TArray<AStellarPlayerController*> GetPlayers() const;
+	TArray<AStellarPlayerController*> GetConnectedPlayers() const;
+	bool GetGameStarted() const { return GameStarted; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool IsPlayerPartOfGame(FString Username) const { return AllPlayers.FindByPredicate([Username](const FPlayerData& Player){ return Player.Username == Username; }) != nullptr; }
 
 	UPROPERTY(BlueprintAssignable)
 	FOnPlayersUpdatedDelegate OnPlayersUpdated;

@@ -26,6 +26,7 @@ void AGameManager::BeginPlay()
 
 	//Complete spawn
 	ServerManager->OnGameSpawnComplete(this);
+	OnPlayersUpdated.Broadcast();
 }
 
 void AGameManager::AddPlayer(AStellarPlayerController* Player)
@@ -38,10 +39,32 @@ void AGameManager::AddPlayer(AStellarPlayerController* Player)
 	}
 	
 	//Add player
+	AllPlayers.AddUnique(FPlayerData{Player->GetUsername()});
 	AActor* PlayerActor = Player;
 	ConnectedPlayers.Add(PlayerActor, Player);
-	AllPlayers.Add(FPlayerData{Player->GetUsername()});
-	UE_LOG(LogTemp, Warning, TEXT("ADDED PLAYER ON SERVER"));
+
+	ForceNetUpdate();
+	
+	UE_LOG(LogTemp, Warning, TEXT("ADDED PLAYER %s TO GAME"), *Player->GetUsername());
+}
+
+void AGameManager::RemovePlayer(AStellarPlayerController* Player)
+{
+	//Ensure adding player is only attempted on the server
+	if(!HasAuthority())
+	{
+		UE_LOG(LogTemp, Error, TEXT("TRYING TO ADD PLAYER TO GAME OUTSIDE OF SERVER"))
+		return;
+	}
+	
+	//Remove player
+	AllPlayers.RemoveAll([Player](const FPlayerData& PlayerData) {return PlayerData.Username == Player->GetUsername();});
+	AActor* PlayerActor = Player;
+	ConnectedPlayers.Remove(PlayerActor);
+
+	ForceNetUpdate();
+
+	UE_LOG(LogTemp, Warning, TEXT("REMOVED PLAYER %s FROM GAME"), *Player->GetUsername());
 }
 
 void AGameManager::OnRep_ConnectedPlayers() const
@@ -56,7 +79,7 @@ void AGameManager::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(AGameManager, AllPlayers);
 }
 
-TArray<AStellarPlayerController*> AGameManager::GetPlayers() const
+TArray<AStellarPlayerController*> AGameManager::GetConnectedPlayers() const
 {
 	TArray<AStellarPlayerController*> PlayerControllers;
 	ConnectedPlayers.GenerateValueArray(PlayerControllers);
