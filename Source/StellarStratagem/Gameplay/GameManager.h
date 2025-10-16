@@ -2,9 +2,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "StellarStratagem/Player/StellarPlayerController.h"
 #include "GameManager.generated.h"
 
+class AServerManager;
 class AStellarPlayerController;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayersUpdatedDelegate);
 
 UCLASS()
 class STELLARSTRATAGEM_API AGameManager : public AActor
@@ -12,21 +16,33 @@ class STELLARSTRATAGEM_API AGameManager : public AActor
 	GENERATED_BODY()
 
 	UPROPERTY(VisibleAnywhere)
+	AServerManager* ServerManager;
+
+	UPROPERTY(VisibleAnywhere)
 	int Turn;
 
 	UPROPERTY(VisibleAnywhere)
-	TMap<AActor*, AStellarPlayerController*> Players;
+	TMap<AActor*, AStellarPlayerController*> ConnectedPlayers;
 
-	UPROPERTY(VisibleAnywhere)
-	TArray<AActor*> AwaitedPlayers;
+	UFUNCTION()
+	void OnRep_ConnectedPlayers() const;
+
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_ConnectedPlayers)
+	TArray<FPlayerData> AllPlayers;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<FPlayerData> AwaitedPlayers;
 
 public:
 	AGameManager();
 	virtual bool IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 
-	void SetupGame();
 	void AddPlayer(AStellarPlayerController* Player);
 
-	auto GetPlayers() { return Players; }
+	TArray<AStellarPlayerController*> GetPlayers() const;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnPlayersUpdatedDelegate OnPlayersUpdated;
 };

@@ -7,15 +7,17 @@
 class AStellarPlayerController;
 class AGameManager;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameCreatedDelegate, AGameManager*, Game);
+
 UCLASS()
 class STELLARSTRATAGEM_API AServerManager : public AActor
 {
 	GENERATED_BODY()
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere)
 	TMap<FString, AGameManager*> Games;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<AGameManager> GameManagerTemplate;
 
 public:
@@ -23,4 +25,10 @@ public:
 	virtual void BeginPlay() override;
 
 	void TryConnectToGame(AStellarPlayerController* Player, const FString& GameCode);
+
+	UFUNCTION()
+	void OnGameSpawnComplete(AGameManager* Game) const;
+	
+	UPROPERTY(BlueprintAssignable)
+	FOnGameCreatedDelegate OnGameCreatedOrJoined;
 };

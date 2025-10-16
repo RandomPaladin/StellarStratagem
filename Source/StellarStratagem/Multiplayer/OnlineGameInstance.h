@@ -11,10 +11,10 @@ class STELLARSTRATAGEM_API UOnlineGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere)
-	TSoftObjectPtr<UWorld> LobbyMap;
-
 public:
 	UFUNCTION(BlueprintCallable)
 	void ConnectToServer();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool IsConnected();
 };
