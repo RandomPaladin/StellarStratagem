@@ -1,6 +1,16 @@
 #include "StellarPlayerController.h"
+
+#include "Components/Widget.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 #include "StellarStratagem/Gameplay/ServerManager.h"
+
+void AStellarPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AStellarPlayerController, Username);
+}
 
 void AStellarPlayerController::BeginPlay()
 {
@@ -8,7 +18,8 @@ void AStellarPlayerController::BeginPlay()
 	ServerManager = Cast<AServerManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AServerManager::StaticClass()));
 
 	//Set random username
-	Username = FString::FromInt(FMath::RandRange(0, 10000000));
+	if(HasAuthority())
+		Username = FString::FromInt(FMath::RandRange(0, 10000000));
 	
 	Super::BeginPlay();
 }

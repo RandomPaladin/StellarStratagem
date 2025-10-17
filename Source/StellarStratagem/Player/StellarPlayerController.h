@@ -36,7 +36,7 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	FString Username;
 
 	UPROPERTY()
@@ -55,6 +55,7 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 	void TryLeaveGame_Server();
 
 public:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FString GetUsername() { return Username; }
 };
