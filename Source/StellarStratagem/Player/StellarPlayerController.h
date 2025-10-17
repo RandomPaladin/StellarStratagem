@@ -59,6 +59,9 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void TryStartGame_Server();
 
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void TryEndTurn_Server();
+
 	UFUNCTION(BlueprintCallable)
 	void CloseApplication();
 

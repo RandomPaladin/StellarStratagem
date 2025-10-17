@@ -25,7 +25,7 @@ void AStellarPlayerController::BeginPlay()
 
 void AStellarPlayerController::SendAction_Server_Implementation(const FActionData& ActionData)
 {
-	UE_LOG(LogTemp, Warning, TEXT("RECEIVED DATA %d"), ActionData.NumberTest);
+	UE_LOG(LogTemp, Warning, TEXT("RECEIVED DATA %d"), ActionData.NumberTest)
 }
 
 void AStellarPlayerController::TryCreateGame_Server_Implementation(const FString& GameCode)
@@ -53,12 +53,26 @@ void AStellarPlayerController::TryStartGame_Server_Implementation()
 	AGameManager* CurrentGame = ServerManager->GetGame(CurrentGameCode);
 	if(!CurrentGame)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GAME %s NOT FOUND"), *CurrentGameCode);
+		UE_LOG(LogTemp, Warning, TEXT("GAME %s NOT FOUND"), *CurrentGameCode)
 		return;
 	}
 
 	//Start game
 	CurrentGame->StartGame();
+}
+
+void AStellarPlayerController::TryEndTurn_Server_Implementation()
+{
+	//Get game and ensure game exists
+	AGameManager* CurrentGame = ServerManager->GetGame(CurrentGameCode);
+	if(!CurrentGame)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GAME %s NOT FOUND"), *CurrentGameCode)
+		return;
+	}
+
+	//End turn
+	CurrentGame->EndTurn(this);
 }
 
 void AStellarPlayerController::CloseApplication()

@@ -21,8 +21,9 @@ void AGameManager::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
-	DOREPLIFETIME(AGameManager, AllPlayers);
+	DOREPLIFETIME(AGameManager, Round);
 	DOREPLIFETIME(AGameManager, GameStarted);
+	DOREPLIFETIME(AGameManager, AllPlayers);
 }
 
 void AGameManager::BeginPlay()
@@ -53,7 +54,7 @@ void AGameManager::AddPlayer(AStellarPlayerController* Player)
 
 	ForceNetUpdate();
 	
-	UE_LOG(LogTemp, Warning, TEXT("ADDED PLAYER %s TO GAME"), *Player->GetUsername());
+	UE_LOG(LogTemp, Warning, TEXT("ADDED PLAYER %s TO GAME"), *Player->GetUsername())
 }
 
 void AGameManager::RemovePlayer(AStellarPlayerController* Player)
@@ -72,7 +73,7 @@ void AGameManager::RemovePlayer(AStellarPlayerController* Player)
 
 	ForceNetUpdate();
 
-	UE_LOG(LogTemp, Warning, TEXT("REMOVED PLAYER %s FROM GAME"), *Player->GetUsername());
+	UE_LOG(LogTemp, Warning, TEXT("REMOVED PLAYER %s FROM GAME"), *Player->GetUsername())
 }
 
 void AGameManager::StartGame()
@@ -80,19 +81,49 @@ void AGameManager::StartGame()
 	//Ensure game start is done on server
 	if(!HasAuthority())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TRYING TO START GAME OUTSIDE OF SERVER"));
+		UE_LOG(LogTemp, Warning, TEXT("TRYING TO START GAME OUTSIDE OF SERVER"))
 		return;
 	}
 
 	//Ensure game isn't already started
 	if(GameStarted)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GAME IS ALREADY STARTED"));
+		UE_LOG(LogTemp, Warning, TEXT("GAME IS ALREADY STARTED"))
 		return;
 	}
 
 	//Start game
+	AwaitedPlayers = AllPlayers;
 	GameStarted = true;
+}
+
+void AGameManager::EndTurn(AStellarPlayerController* Player)
+{
+	//Ensure this is only attempted on the server
+	if(!HasAuthority())
+	{
+		UE_LOG(LogTemp, Error, TEXT("TRYING TO END TURN OUTSIDE OF SERVER"))
+		return;
+	}
+	
+	//Ensure player is awaited
+	if(!AwaitedPlayers.ContainsByPredicate([Player](const FPlayerData& PlayerData){ return PlayerData.Username == Player->GetUsername(); }))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PLAYER IS NOT AWAITED"))
+		return;
+	}
+
+	//Remove awaited player from list
+	UE_LOG(LogTemp, Warning, TEXT("PLAYER %s ENDED THEIR TURN"), *Player->GetUsername())
+	AwaitedPlayers.RemoveAll([Player](const FPlayerData& PlayerData){ return PlayerData.Username == Player->GetUsername(); });
+
+	//Move on to the next round if all awaited players took their turn
+	if(AwaitedPlayers.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ALL PLAYERS ENDED THEIR TURN, GO TO NEXT ROUND"))
+		Round++;
+		AwaitedPlayers = AllPlayers;
+	}
 }
 
 void AGameManager::OnRep_GameStarted() const

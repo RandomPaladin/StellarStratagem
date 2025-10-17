@@ -19,20 +19,20 @@ class STELLARSTRATAGEM_API AGameManager : public AActor
 	UPROPERTY(VisibleAnywhere)
 	AServerManager* ServerManager;
 
-	UPROPERTY(VisibleAnywhere)
-	int Turn;
-
-	UPROPERTY(VisibleAnywhere)
-	TMap<AActor*, AStellarPlayerController*> ConnectedPlayers;
-
+	UPROPERTY(VisibleAnywhere, Replicated)
+	int Round = 0;
+	
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_GameStarted)
 	bool GameStarted = false;
-	
+
+	//Replication callbacks
 	UFUNCTION()
 	void OnRep_ConnectedPlayers() const;
 	UFUNCTION()
 	void OnRep_GameStarted() const;
 
+	UPROPERTY(VisibleAnywhere)
+	TMap<AActor*, AStellarPlayerController*> ConnectedPlayers;
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_ConnectedPlayers)
 	TArray<FPlayerData> AllPlayers;
@@ -40,21 +40,27 @@ protected:
 	TArray<FPlayerData> AwaitedPlayers;
 
 public:
+	//Setup
 	AGameManager();
 	virtual bool IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 
+	//Lobby
 	void AddPlayer(AStellarPlayerController* Player);
 	void RemovePlayer(AStellarPlayerController* Player);
 
+	//Game
 	void StartGame();
+	void EndTurn(AStellarPlayerController* Player);
 
+	//Getters
 	TArray<AStellarPlayerController*> GetConnectedPlayers() const;
 	bool GetGameStarted() const { return GameStarted; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsPlayerPartOfGame(FString Username) const { return AllPlayers.FindByPredicate([Username](const FPlayerData& Player){ return Player.Username == Username; }) != nullptr; }
-	
+
+	//Delegates
 	UPROPERTY(BlueprintAssignable)
 	FNoParamDelegate OnPlayersUpdated;
 	UPROPERTY(BlueprintAssignable)
