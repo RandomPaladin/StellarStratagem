@@ -24,12 +24,14 @@ public:
 	AServerManager();
 	virtual void BeginPlay() override;
 
-	void TryCreateGame(AStellarPlayerController* Player, const FString& GameCode);
-	void TryJoinGame(AStellarPlayerController* Player, const FString& GameCode);
+	bool TryCreateGame(AStellarPlayerController* Player, const FString& GameCode); //Returns true if game was created successfully
+	bool TryJoinGame(AStellarPlayerController* Player, const FString& GameCode); //Returns true if game was joined successfully
 	void TryLeaveGame(AStellarPlayerController* Player);
 
 	UFUNCTION()
 	void OnGameSpawnComplete(AGameManager* Game) const;
+
+	AGameManager* GetGame(const FString& GameCode) const { return Games[GameCode]; }
 	
 	UPROPERTY(BlueprintAssignable)
 	FOnGameCreatedDelegate OnGameCreatedOrJoined;

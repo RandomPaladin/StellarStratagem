@@ -1,8 +1,7 @@
 #include "StellarPlayerController.h"
-
-#include "Components/Widget.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "StellarStratagem/Gameplay/GameManager.h"
 #include "StellarStratagem/Gameplay/ServerManager.h"
 
 void AStellarPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -31,15 +30,41 @@ void AStellarPlayerController::SendAction_Server_Implementation(const FActionDat
 
 void AStellarPlayerController::TryCreateGame_Server_Implementation(const FString& GameCode)
 {
-	ServerManager->TryCreateGame(this, GameCode);
+	const bool Succeeded = ServerManager->TryCreateGame(this, GameCode);
+	if(Succeeded)
+		CurrentGameCode = GameCode;
 }
 
 void AStellarPlayerController::TryJoinGame_Server_Implementation(const FString& GameCode)
 {
-	ServerManager->TryJoinGame(this, GameCode);
+	const bool Succeeded = ServerManager->TryJoinGame(this, GameCode);
+	if(Succeeded)
+		CurrentGameCode = GameCode;
 }
 
 void AStellarPlayerController::TryLeaveGame_Server_Implementation()
 {
 	ServerManager->TryLeaveGame(this);
+}
+
+void AStellarPlayerController::TryStartGame_Server_Implementation()
+{
+	//Get game and ensure game exists
+	AGameManager* CurrentGame = ServerManager->GetGame(CurrentGameCode);
+	if(!CurrentGame)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GAME %s NOT FOUND"), *CurrentGameCode);
+		return;
+	}
+
+	//Start game
+	CurrentGame->StartGame();
+}
+
+void AStellarPlayerController::CloseApplication()
+{
+	//TODO REMOVE SELF FROM GAME LOBBY
+
+	//Close app
+	UKismetSystemLibrary::QuitGame(GetWorld(), this, EQuitPreference::Quit, false);
 }

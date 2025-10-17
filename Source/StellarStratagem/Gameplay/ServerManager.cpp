@@ -11,59 +11,61 @@ void AServerManager::BeginPlay()
 	Super::BeginPlay();
 }
 
-void AServerManager::TryCreateGame(AStellarPlayerController* Player, const FString& GameCode)
+bool AServerManager::TryCreateGame(AStellarPlayerController* Player, const FString& GameCode)
 {
 	//Ensure creation is only attempted on the server
 	if(!HasAuthority())
 	{
 		UE_LOG(LogTemp, Error, TEXT("TRYING TO CREATE GAME OUTSIDE OF SERVER"))
-		return;
+		return false;
 	}
 
 	//Ensure game with this code doesn't already exist
 	if(Games.Contains(GameCode))
 	{
 		UE_LOG(LogTemp, Error, TEXT("GAME WITH GIVEN CODE ALREADY EXISTS"))
-		return;
+		return false;
 	}
 	
 	//Spawn new game
+	UE_LOG(LogTemp, Warning, TEXT("CREATING NEW GAME %s"), *GameCode)
 	AGameManager* SpawnedGame = GetWorld()->SpawnActor<AGameManager>(GameManagerTemplate);
 	Games.Add(GameCode, SpawnedGame);
 	
-	UE_LOG(LogTemp, Warning, TEXT("CREATING NEW GAME %s"), *GameCode)
-	
 	//Add player to game
 	Games[GameCode]->AddPlayer(Player);
+
+	return true;
 }
 
-void AServerManager::TryJoinGame(AStellarPlayerController* Player, const FString& GameCode)
+bool AServerManager::TryJoinGame(AStellarPlayerController* Player, const FString& GameCode)
 {
 	//Ensure joining is only attempted on the server
 	if(!HasAuthority())
 	{
 		UE_LOG(LogTemp, Error, TEXT("TRYING TO JOIN GAME OUTSIDE OF SERVER"))
-		return;
+		return false;
 	}
 
 	//Ensure game with this code exists
 	if(!Games.Contains(GameCode))
 	{
 		UE_LOG(LogTemp, Error, TEXT("GAME WITH GIVEN CODE DOESN'T EXIST"))
-		return;
+		return false;
 	}
 	
 	//Ensure player isn't already connected to game
 	if(Games[GameCode]->GetConnectedPlayers().Contains(Player))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TRYING TO CONNECT PLAYER TO GAME THEY'RE ALREADY CONNECTED TO"))
-		return;
+		return false;
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("JOINING EXISTING GAME %s"), *GameCode)
 	
 	//Add player to game
+	UE_LOG(LogTemp, Warning, TEXT("JOINING EXISTING GAME %s"), *GameCode)
 	Games[GameCode]->AddPlayer(Player);
+
+	return true;
 }
 
 void AServerManager::TryLeaveGame(AStellarPlayerController* Player)

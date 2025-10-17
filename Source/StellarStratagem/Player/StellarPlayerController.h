@@ -36,11 +36,14 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
+	UPROPERTY()
+	AServerManager* ServerManager;
+	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	FString Username;
 
 	UPROPERTY()
-	AServerManager* ServerManager;
+	FString CurrentGameCode;
 
 	virtual void BeginPlay() override;
 
@@ -53,6 +56,11 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 	void TryJoinGame_Server(const FString& GameCode);
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void TryLeaveGame_Server();
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void TryStartGame_Server();
+
+	UFUNCTION(BlueprintCallable)
+	void CloseApplication();
 
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
