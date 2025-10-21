@@ -38,6 +38,8 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UWorld> MainGameMap;
 	UPROPERTY()
 	AServerManager* ServerManager;
 	
@@ -66,6 +68,8 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 
 	UFUNCTION(BlueprintCallable)
 	void CloseApplication();
+	UFUNCTION(BlueprintCallable)
+	void GoToMainMenu();
 
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

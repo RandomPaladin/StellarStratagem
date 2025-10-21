@@ -82,3 +82,11 @@ void AStellarPlayerController::CloseApplication()
 	//Close app
 	UKismetSystemLibrary::QuitGame(GetWorld(), this, EQuitPreference::Quit, false);
 }
+
+void AStellarPlayerController::GoToMainMenu()
+{
+	//TODO EXIT SAFELY
+
+	//Go back to main menu
+	UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), MainGameMap);
+}
