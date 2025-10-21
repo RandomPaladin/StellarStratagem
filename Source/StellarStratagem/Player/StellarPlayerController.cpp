@@ -90,3 +90,30 @@ void AStellarPlayerController::GoToMainMenu()
 	//Go back to main menu
 	UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), MainGameMap);
 }
+
+#pragma region Input
+
+void AStellarPlayerController::OnPress(const FVector& Loc)
+{
+	StartTouchLoc = Loc;
+	StartCamLoc = CamActor->GetActorLocation();
+}
+
+void AStellarPlayerController::OnPressMoved(const FVector& Loc)
+{
+	CurrentTouchLoc = Loc;
+
+	if(TwoFingersTouching)
+		return;
+
+	FVector Offset = (CurrentTouchLoc - StartTouchLoc) * ScrollAcceleration;
+
+	CamActor->SetActorLocation(StartCamLoc + Offset);
+}
+
+void AStellarPlayerController::OnPressReleased(const FVector& Loc)
+{
+}
+
+
+#pragma endregion
