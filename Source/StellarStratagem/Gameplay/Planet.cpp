@@ -59,4 +59,12 @@ void APlanet::SetOwningPlayer(const FPlayerData& NewOwningPlayer)
 	OwningPlayer = NewOwningPlayer;
 }
 
+void APlanet::SetPlanetMesh_Implementation(const int MeshIndex)
+{
+	//Ignore art stuff on server
+	if(HasAuthority())
+		return;
+
+	//Set new mesh
+	MeshComp->SetStaticMesh(PlanetMeshes[MeshIndex]);
 }

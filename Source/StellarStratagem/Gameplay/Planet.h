@@ -35,6 +35,10 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 	//Art
 	UPROPERTY(EditAnywhere)
 	TArray<UStaticMesh*> PlanetMeshes;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SetPlanetMesh(int MeshIndex);
+
 public:
 	APlanet();
 	virtual bool IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const override;
