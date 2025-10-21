@@ -13,8 +13,8 @@ class STELLARSTRATAGEM_API UOnlineGameInstance : public UGameInstance
 
 public:
 	UFUNCTION(BlueprintCallable)
-	void ConnectToServer();
+	void ConnectToServer() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	bool IsConnected();
+	bool IsConnected() const;
 };
