@@ -55,7 +55,9 @@ public:
 	void EndTurn(AStellarPlayerController* Player);
 
 	//Getters
-	TArray<AStellarPlayerController*> GetConnectedPlayers() const;
+	TMap<AActor*, AStellarPlayerController*> GetConnectedPlayers() const { return ConnectedPlayers; }
+	TArray<AStellarPlayerController*> GetConnectedPlayerControllers() const;
+	int GetPlayerAmount() const { return AllPlayers.Num(); }
 	bool GetGameStarted() const { return GameStarted; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsPlayerPartOfGame(FString Username) const { return AllPlayers.FindByPredicate([Username](const FPlayerData& Player){ return Player.Username == Username; }) != nullptr; }

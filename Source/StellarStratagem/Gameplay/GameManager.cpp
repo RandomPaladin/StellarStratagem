@@ -81,14 +81,14 @@ void AGameManager::StartGame()
 	//Ensure game start is done on server
 	if(!HasAuthority())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TRYING TO START GAME OUTSIDE OF SERVER"))
+		UE_LOG(LogTemp, Error, TEXT("TRYING TO START GAME OUTSIDE OF SERVER"))
 		return;
 	}
 
 	//Ensure game isn't already started
 	if(GameStarted)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GAME IS ALREADY STARTED"))
+		UE_LOG(LogTemp, Error, TEXT("GAME IS ALREADY STARTED"))
 		return;
 	}
 
@@ -109,7 +109,7 @@ void AGameManager::EndTurn(AStellarPlayerController* Player)
 	//Ensure player is awaited
 	if(!AwaitedPlayers.ContainsByPredicate([Player](const FPlayerData& PlayerData){ return PlayerData.Username == Player->GetUsername(); }))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("PLAYER IS NOT AWAITED"))
+		UE_LOG(LogTemp, Error, TEXT("PLAYER IS NOT AWAITED"))
 		return;
 	}
 
@@ -136,7 +136,7 @@ void AGameManager::OnRep_ConnectedPlayers() const
 	OnPlayersUpdated.Broadcast();
 }
 
-TArray<AStellarPlayerController*> AGameManager::GetConnectedPlayers() const
+TArray<AStellarPlayerController*> AGameManager::GetConnectedPlayerControllers() const
 {
 	TArray<AStellarPlayerController*> PlayerControllers;
 	ConnectedPlayers.GenerateValueArray(PlayerControllers);

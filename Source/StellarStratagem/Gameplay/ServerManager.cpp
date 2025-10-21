@@ -55,7 +55,7 @@ bool AServerManager::TryJoinGame(AStellarPlayerController* Player, const FString
 	}
 	
 	//Ensure player isn't already connected to game
-	if(Games[GameCode]->GetConnectedPlayers().Contains(Player))
+	if(Games[GameCode]->GetConnectedPlayerControllers().Contains(Player))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TRYING TO CONNECT PLAYER TO GAME THEY'RE ALREADY CONNECTED TO"))
 		return false;
@@ -87,7 +87,7 @@ void AServerManager::TryLeaveGame(AStellarPlayerController* Player)
 			continue;
 
 		//Find game containing given player
-		TArray<AStellarPlayerController*> Players = Game.Value->GetConnectedPlayers();
+		TArray<AStellarPlayerController*> Players = Game.Value->GetConnectedPlayerControllers();
 		if(Players.Contains(Player))
 		{
 			JoinedGameCode = Game.Key;
@@ -108,7 +108,7 @@ void AServerManager::TryLeaveGame(AStellarPlayerController* Player)
 	Games[JoinedGameCode]->RemovePlayer(Player);
 
 	//If all players leave game, destroy game
-	if(Games[JoinedGameCode]->GetConnectedPlayers().Num() == 0)
+	if(Games[JoinedGameCode]->GetConnectedPlayerControllers().Num() == 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("GAME %s HAS NO CONNECTED PLAYERS, DESTROYING GAME"), *JoinedGameCode)
 		Games[JoinedGameCode]->Destroy();
