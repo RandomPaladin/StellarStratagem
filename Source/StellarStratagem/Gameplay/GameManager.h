@@ -5,6 +5,7 @@
 #include "StellarStratagem/Player/StellarPlayerController.h"
 #include "GameManager.generated.h"
 
+class APlanet;
 class AServerManager;
 class AStellarPlayerController;
 
@@ -38,6 +39,20 @@ protected:
 	TArray<FPlayerData> AllPlayers;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<FPlayerData> AwaitedPlayers;
+
+	//Planets
+	UPROPERTY(EditAnywhere, Category=Planets)
+	TSubclassOf<APlanet> PlanetTemplate;
+	UPROPERTY(EditAnywhere, Category=Planets)
+	int SpawnPlanetsPerPlayer = 5;
+	UPROPERTY(EditAnywhere, Category=Planets)
+	FVector2D SpawnPlanetXLocRange = {-3000.f, 3000.f};
+	UPROPERTY(EditAnywhere, Category=Planets)
+	FVector2D SpawnPlanetYLocRange = {-3000.f, 3000.f};
+	UPROPERTY(EditAnywhere, Category=Planets)
+	FVector2D SpawnPlanetRotRange = {0.f, 359.f};
+	UPROPERTY(VisibleAnywhere, Category=Planets)
+	TArray<APlanet*> Planets;
 
 public:
 	//Setup

@@ -17,7 +17,7 @@ struct FPlayerData
 	
 	FPlayerData()
 	{
-		Username = "USERNAMENOTSET";
+		Username = "";
 	}
 
 	FPlayerData(FString InUsername)
@@ -29,6 +29,8 @@ struct FPlayerData
 	{
 		return Username == Other.Username;
 	}
+
+	bool IsValid() const { return !Username.IsEmpty(); }
 };
 
 UCLASS()

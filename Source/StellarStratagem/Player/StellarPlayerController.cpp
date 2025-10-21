@@ -19,7 +19,7 @@ void AStellarPlayerController::BeginPlay()
 	//Set random username
 	if(HasAuthority())
 		Username = FString::FromInt(FMath::RandRange(0, 10000000));
-	
+
 	Super::BeginPlay();
 }
 

@@ -1,12 +1,16 @@
 #include "GameManager.h"
+#include "Planet.h"
 #include "ServerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "StellarStratagem/Player/StellarPlayerController.h"
 
+#pragma region Setup / Lobby
+
 AGameManager::AGameManager()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
 }
 
 bool AGameManager::IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const
@@ -76,6 +80,10 @@ void AGameManager::RemovePlayer(AStellarPlayerController* Player)
 	UE_LOG(LogTemp, Warning, TEXT("REMOVED PLAYER %s FROM GAME"), *Player->GetUsername())
 }
 
+#pragma endregion
+
+#pragma region Game
+
 void AGameManager::StartGame()
 {
 	//Ensure game start is done on server
@@ -95,6 +103,52 @@ void AGameManager::StartGame()
 	//Start game
 	AwaitedPlayers = AllPlayers;
 	GameStarted = true;
+
+	//Create planets
+	const int PlanetAmount = GetPlayerAmount() * SpawnPlanetsPerPlayer;
+	for (int i = 0; i < PlanetAmount; i++)
+	{
+		FVector SpawnLoc = {FMath::RandRange(SpawnPlanetXLocRange.X, SpawnPlanetXLocRange.Y), FMath::RandRange(SpawnPlanetYLocRange.X, SpawnPlanetYLocRange.Y), 0.f};
+		FRotator SpawnRot = {0.f, FMath::RandRange(SpawnPlanetRotRange.X, SpawnPlanetRotRange.Y), 0.f};
+		APlanet* SpawnedPlanet = GetWorld()->SpawnActor<APlanet>(PlanetTemplate, SpawnLoc, SpawnRot);
+		SpawnedPlanet->Setup(this);
+		Planets.Add(SpawnedPlanet);
+	}
+	
+	//Grant a starting planet to each player
+	const UEnum* GradeEnum = StaticEnum<EPlanetGrade>();
+	const int GradeEnumMiddleIndex = (GradeEnum->NumEnums() - 1) / 2;
+	for (FPlayerData Player : AllPlayers)
+	{
+		//Find a suitable planet to grant to player (one closest to the middle grade)
+		int StartPlanetIndex = -1;
+		int BestDist = 10000;
+		for(int i = 0; i < Planets.Num(); i++)
+		{
+			//Ignore already owned planets
+			if(Planets[i]->IsOwnedByPlayer())
+				continue;
+
+			//Check if this planet's grade is closer to the middle grade
+			const int GradeEnumIndex = GradeEnum->GetIndexByValue(Planets[i]->GetGrade());
+			const int NewDist = FMath::Abs(GradeEnumMiddleIndex - GradeEnumIndex);
+			if(NewDist < BestDist)
+			{
+				BestDist = NewDist;
+				StartPlanetIndex = i;
+			}
+		}
+
+		//Ensure a starting planet was found
+		if(StartPlanetIndex == -1)
+		{
+			UE_LOG(LogTemp, Error, TEXT("COULDN'T FIND SUITABLE START PLANET FOR PLAYER"))
+			continue;
+		}
+		
+		//Grant starting planet to player
+		Planets[StartPlanetIndex]->SetOwningPlayer(Player);
+	}
 }
 
 void AGameManager::EndTurn(AStellarPlayerController* Player)
@@ -126,6 +180,10 @@ void AGameManager::EndTurn(AStellarPlayerController* Player)
 	}
 }
 
+#pragma endregion
+
+#pragma region Replication
+
 void AGameManager::OnRep_GameStarted() const
 {
 	OnGameStateUpdated.Broadcast(GameStarted);
@@ -135,6 +193,8 @@ void AGameManager::OnRep_ConnectedPlayers() const
 {
 	OnPlayersUpdated.Broadcast();
 }
+
+#pragma endregion
 
 TArray<AStellarPlayerController*> AGameManager::GetConnectedPlayerControllers() const
 {

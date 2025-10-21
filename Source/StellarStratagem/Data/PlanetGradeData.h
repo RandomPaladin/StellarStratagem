@@ -7,16 +7,17 @@
 UENUM(BlueprintType)
 enum EPlanetGrade
 {
-	Grade1,
-	Grade2,
-	Grade3,
-	Grade4,
-	Grade5,
-	Grade6,
-	Grade7,
-	Grade8,
-	Grade9,
-	Grade10,
+	GradeNone = 0,
+	Grade1 = 1,
+	Grade2 = 2,
+	Grade3 = 3,
+	Grade4 = 4,
+	Grade5 = 5,
+	Grade6 = 6,
+	Grade7 = 7,
+	Grade8 = 8,
+	Grade9 = 9,
+	Grade10 = 10,
 };
 
 USTRUCT(BlueprintType)
