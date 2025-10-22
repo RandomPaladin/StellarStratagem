@@ -227,3 +227,26 @@ TArray<AStellarPlayerController*> AGameManager::GetConnectedPlayerControllers() 
 
 	return PlayerControllers;
 }
+
+TArray<APlanet*> AGameManager::GetPlanetsOwnedByPlayer(const FPlayerData& Player)
+{
+	TArray<APlanet*> OwnedPlanets;
+	for (APlanet* Planet : Planets)
+	{
+		if(Planet->IsOwnedByPlayer(Player.Username))
+			OwnedPlanets.Add(Planet);
+	}
+
+	return OwnedPlanets;
+}
+
+APlanet* AGameManager::GetPlanetByName(const FString& InName)
+{
+	for (APlanet* Planet : Planets)
+	{
+		if(Planet->GetPlanetName() == InName)
+			return Planet;
+	}
+
+	return nullptr;
+}

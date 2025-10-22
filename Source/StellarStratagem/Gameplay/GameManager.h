@@ -83,6 +83,10 @@ public:
 	bool IsPlayerPartOfGame(FString Username) const { return AllPlayers.FindByPredicate([Username](const FPlayerData& Player){ return Player.Username == Username; }) != nullptr; }
 
 	TArray<APlanet*> GetPlanets() const { return Planets; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	TArray<APlanet*> GetPlanetsOwnedByPlayer(const FPlayerData& Player);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	APlanet* GetPlanetByName(const FString& InName);
 	
 	//Delegates
 	UPROPERTY(BlueprintAssignable)

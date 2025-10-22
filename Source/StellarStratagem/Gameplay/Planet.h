@@ -71,6 +71,8 @@ public:
 	void SetOwningPlayer(const FPlayerData& NewOwningPlayer);
 
 	//Getters
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	AGameManager* GetGameManager() const { return GameManager; }
 	bool IsOwnedByPlayer(const FPlayerData& PlayerData) const { return OwningPlayer == PlayerData; }
 	bool IsOwnedByPlayer() const { return OwningPlayer.IsValid(); }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
