@@ -1,8 +1,10 @@
 #include "Planet.h"
 #include "GameManager.h"
+#include "Engine/DataTable.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "StellarStratagem/Data/PlanetGradeData.h"
+#include "StellarStratagem/Data/PlanetNamesDataTable.h"
 
 APlanet::APlanet()
 {
@@ -27,6 +29,7 @@ void APlanet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(APlanet, OwningPlayer);
+	DOREPLIFETIME(APlanet, PlanetName);
 	DOREPLIFETIME(APlanet, Grade);
 	DOREPLIFETIME(APlanet, IndustrialBuildings);
 	DOREPLIFETIME(APlanet, ResearchBuildings);
@@ -44,6 +47,11 @@ void APlanet::Setup(AGameManager* Game)
 	
 	//Record game manager
 	GameManager = Game;
+
+	//Set random name
+	TArray<FPlanetNamesDataTable*> Rows;
+	NamesData->GetAllRows<FPlanetNamesDataTable>("", Rows);
+	PlanetName = Rows[FMath::RandRange(0, Rows.Num() - 1)]->PlanetName;
 	
 	//Set random grade
 	TArray<TEnumAsByte<EPlanetGrade>> AllGradesInData;

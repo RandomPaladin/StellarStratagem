@@ -19,7 +19,6 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 	UStaticMeshComponent* MeshComp;
 	UPROPERTY()
 	AGameManager* GameManager;
-
 	UPROPERTY(VisibleAnywhere, Replicated)
 	FPlayerData OwningPlayer;
 
@@ -28,8 +27,9 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 	UPROPERTY(EditAnywhere)
 	UDataTable* NamesData;
 	UPROPERTY(VisibleAnywhere, Replicated)
+	FString PlanetName;
+	UPROPERTY(VisibleAnywhere, Replicated)
 	TEnumAsByte<EPlanetGrade> Grade;
-
 	UPROPERTY(VisibleAnywhere, Replicated)
 	int BuildingSlots = 0;
 	UPROPERTY(VisibleAnywhere, Replicated)
@@ -51,7 +51,16 @@ public:
 
 	void Setup(AGameManager* Game);
 	void SetOwningPlayer(const FPlayerData& NewOwningPlayer);
+
+	//Getters
 	bool IsOwnedByPlayer(const FString& Username) const { return OwningPlayer.Username == Username; }
 	bool IsOwnedByPlayer() const { return OwningPlayer.IsValid(); }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FPlayerData GetOwningPlayer() const { return OwningPlayer; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	TEnumAsByte<EPlanetGrade> GetGrade() const { return Grade; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FString GetPlanetName() const { return PlanetName; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	int GetBuildingSlots() const { return BuildingSlots; }
 };
