@@ -38,3 +38,26 @@ int UPlanetGradeData::GenerateRandomBuildingSlotAmount(const EPlanetGrade Grade)
 
 	return Target;
 }
+
+void UPlanetGradeData::TestBuildingSlotDistribution()
+{
+	for (TTuple<TEnumAsByte<EPlanetGrade>, FGradeData> Kvp : Grades)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GRADE %d ======================="), (int)Kvp.Key);
+		
+		TMap<int, int> SlotAmounts;
+		for(int i = 0; i < 1000; i++)
+		{
+			int SlotAmount = GenerateRandomBuildingSlotAmount(Kvp.Key);
+			if(SlotAmounts.Contains(SlotAmount))
+				SlotAmounts[SlotAmount]++;
+			else
+				SlotAmounts.Add(SlotAmount, 1);
+		}
+		
+		SlotAmounts.KeySort([](auto Item1, auto Item2){ return Item1 < Item2; });
+
+		for (TTuple<int, int> Amount : SlotAmounts)
+			UE_LOG(LogTemp, Warning, TEXT("SLOT AMOUNT %d:\t%.1f %% OCCURENCE"), Amount.Key, (float)Amount.Value / 10.f);
+	}
+}

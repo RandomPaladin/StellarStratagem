@@ -46,4 +46,7 @@ public:
 	TMap<TEnumAsByte<EPlanetGrade>, FGradeData> Grades;
 	
 	int GenerateRandomBuildingSlotAmount(EPlanetGrade Grade);
+	
+	UFUNCTION(CallInEditor)
+	void TestBuildingSlotDistribution();
 };
