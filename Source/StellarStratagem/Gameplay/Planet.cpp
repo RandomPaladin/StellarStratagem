@@ -31,8 +31,6 @@ void APlanet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	DOREPLIFETIME(APlanet, OwningPlayer);
 	DOREPLIFETIME(APlanet, PlanetName);
 	DOREPLIFETIME(APlanet, Grade);
-	DOREPLIFETIME(APlanet, IndustrialBuildings);
-	DOREPLIFETIME(APlanet, ResearchBuildings);
 	DOREPLIFETIME(APlanet, BuildingSlots);
 }
 
@@ -59,7 +57,10 @@ void APlanet::Setup(AGameManager* Game)
 	Grade = AllGradesInData[FMath::RandRange(0, AllGradesInData.Num() - 1)];
 
 	//Set random building slots
-	BuildingSlots = GradesData->GenerateRandomBuildingSlotAmount(Grade);
+	BuildingSlots.Empty();
+	const int SlotAmount = GradesData->GenerateRandomBuildingSlotAmount(Grade);
+	for(int i = 0; i < SlotAmount; i++)
+		BuildingSlots.Add({});
 
 	UE_LOG(LogTemp, Warning, TEXT("SETUP PLANET"))
 

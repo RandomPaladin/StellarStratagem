@@ -10,6 +10,28 @@ class AGameManager;
 enum EPlanetGrade : int;
 class UPlanetGradeData;
 
+UENUM(BlueprintType)
+enum EBuildingType
+{
+	None,
+	Factory,
+	Research,
+};
+
+USTRUCT(BlueprintType)
+struct FBuildingSlot
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly)
+	TEnumAsByte<EBuildingType> BuildingType;
+	
+	FBuildingSlot()
+	{
+		BuildingType = None;
+	}
+};
+
 UCLASS()
 class STELLARSTRATAGEM_API APlanet : public AActor
 {
@@ -31,11 +53,7 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 	UPROPERTY(VisibleAnywhere, Replicated)
 	TEnumAsByte<EPlanetGrade> Grade;
 	UPROPERTY(VisibleAnywhere, Replicated)
-	int BuildingSlots = 0;
-	UPROPERTY(VisibleAnywhere, Replicated)
-	int IndustrialBuildings = 0;
-	UPROPERTY(VisibleAnywhere, Replicated)
-	int ResearchBuildings = 0;
+	TArray<FBuildingSlot> BuildingSlots;
 
 	//Art
 	UPROPERTY(EditAnywhere)
@@ -53,7 +71,7 @@ public:
 	void SetOwningPlayer(const FPlayerData& NewOwningPlayer);
 
 	//Getters
-	bool IsOwnedByPlayer(const FString& Username) const { return OwningPlayer.Username == Username; }
+	bool IsOwnedByPlayer(const FPlayerData& PlayerData) const { return OwningPlayer == PlayerData; }
 	bool IsOwnedByPlayer() const { return OwningPlayer.IsValid(); }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FPlayerData GetOwningPlayer() const { return OwningPlayer; }
@@ -62,5 +80,5 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FString GetPlanetName() const { return PlanetName; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	int GetBuildingSlots() const { return BuildingSlots; }
+	TArray<FBuildingSlot> GetBuildingSlots() const { return BuildingSlots; }
 };
