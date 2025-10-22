@@ -82,7 +82,7 @@ void AGameManager::RemovePlayer(AStellarPlayerController* Player)
 
 #pragma endregion
 
-#pragma region Game
+#pragma region Gameplay
 
 void AGameManager::StartGame()
 {
@@ -173,11 +173,35 @@ void AGameManager::EndTurn(AStellarPlayerController* Player)
 
 	//Move on to the next round if all awaited players took their turn
 	if(AwaitedPlayers.Num() == 0)
+		GoToNextRound();
+}
+
+void AGameManager::GoToNextRound()
+{
+	//Increment round
+	UE_LOG(LogTemp, Warning, TEXT("ALL PLAYERS ENDED THEIR TURN, GOING TO NEXT ROUND"))
+	Round++;
+	AwaitedPlayers = AllPlayers;
+
+	//Generate building resources
+	//TODO
+	
+	//Build planned buildings
+
+	//Complete ship movement
+
+	//Resolve combat
+}
+
+void AGameManager::RegisterPlanet(APlanet* Planet)
+{
+	if(HasAuthority())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ALL PLAYERS ENDED THEIR TURN, GO TO NEXT ROUND"))
-		Round++;
-		AwaitedPlayers = AllPlayers;
+		UE_LOG(LogTemp, Error, TEXT("REGISTERING PLANET SHOULD ONLY OCCUR ON CLIENT"))
+		return;
 	}
+	
+	Planets.AddUnique(Planet);
 }
 
 #pragma endregion

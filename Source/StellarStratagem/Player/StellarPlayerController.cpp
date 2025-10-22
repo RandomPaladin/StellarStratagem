@@ -1,7 +1,9 @@
 #include "StellarPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "StellarStratagem/Actions/ActionBase.h"
 #include "StellarStratagem/Gameplay/GameManager.h"
+#include "StellarStratagem/Gameplay/Planet.h"
 #include "StellarStratagem/Gameplay/ServerManager.h"
 
 void AStellarPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -9,10 +11,14 @@ void AStellarPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AStellarPlayerController, Username);
+	DOREPLIFETIME(AStellarPlayerController, GoldAmount);
 }
 
 void AStellarPlayerController::BeginPlay()
 {
+	//Calculate sqr of planet select radius
+	PlanetSelectRadiusSqr = FMath::Pow(PlanetSelectRadius, 2.f);
+	
 	//Get server manager
 	ServerManager = Cast<AServerManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AServerManager::StaticClass()));
 
@@ -67,7 +73,7 @@ void AStellarPlayerController::TryEndTurn_Server_Implementation()
 	AGameManager* CurrentGame = ServerManager->GetGame(CurrentGameCode);
 	if(!CurrentGame)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GAME %s NOT FOUND"), *CurrentGameCode)
+		UE_LOG(LogTemp, Error, TEXT("GAME %s NOT FOUND"), *CurrentGameCode)
 		return;
 	}
 
@@ -91,6 +97,23 @@ void AStellarPlayerController::GoToMainMenu()
 	UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), MainGameMap);
 }
 
+#pragma region Gameplay
+
+void AStellarPlayerController::AddGold(int Gold)
+{
+	//Ensure this is performed on the server
+	if(!HasAuthority())
+	{
+		UE_LOG(LogTemp, Error, TEXT("TRYING TO ADD GOLD OUTSIDE OF SERVER"))
+		return;
+	}
+
+	//Add gold
+	GoldAmount += Gold;
+}
+
+#pragma endregion
+
 #pragma region Input
 
 void AStellarPlayerController::OnPress(const FVector& Loc)
@@ -101,19 +124,79 @@ void AStellarPlayerController::OnPress(const FVector& Loc)
 
 void AStellarPlayerController::OnPressMoved(const FVector& Loc)
 {
+	//Record current touch loc
 	CurrentTouchLoc = Loc;
 
+	//Ignore if two fingers touching
 	if(TwoFingersTouching)
 		return;
 
+	//Update camera loc
 	FVector Offset = (CurrentTouchLoc - StartTouchLoc) * ScrollAcceleration;
-
 	CamActor->SetActorLocation(StartCamLoc + Offset);
 }
 
 void AStellarPlayerController::OnPressReleased(const FVector& Loc)
 {
+	//TODO ONLY SELECT IF DIDN'T DRAG OUT OF PLANET
+	
+	//Get game
+	AGameManager* Game = GetGameOnClient();
+
+	//Find world loc
+	FVector WorldLoc = ScreenToWorldLoc(Loc);
+
+	//Find a planet that's close enough to select
+	APlanet* PlanetToSelect = nullptr;
+	for (APlanet* Planet : Game->GetPlanets())
+	{
+		float SqrDist = FVector::DistSquared(Planet->GetActorLocation(), WorldLoc);
+		if(SqrDist > PlanetSelectRadiusSqr)
+			continue;
+
+		PlanetToSelect = Planet;
+		break;
+	}
+
+	//No selectable planet found, return
+	if(!PlanetToSelect)
+		return;
+
+	//Select planet
+	SelectedPlanet = PlanetToSelect;
+	OnPlanetSelected.Broadcast(PlanetToSelect);
 }
 
+#pragma endregion
+
+#pragma region Helpers
+
+AGameManager* AStellarPlayerController::GetGameOnClient()
+{
+	if(!GameManager)
+		GameManager = Cast<AGameManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AGameManager::StaticClass()));
+
+	return GameManager;
+}
+
+FVector AStellarPlayerController::ScreenToWorldLoc(const FVector& ScreenLoc) const
+{
+	FVector WorldLoc;
+	FVector WorldDir;
+	DeprojectScreenPositionToWorld(ScreenLoc.X, ScreenLoc.Y, WorldLoc, WorldDir);
+	const float DistanceToZPlane = -(WorldLoc.Z / WorldDir.Z);
+	const FVector WorldLocOnZPlane = WorldLoc + WorldDir * DistanceToZPlane;
+
+	return WorldLocOnZPlane;
+}
+
+APlanet* AStellarPlayerController::GetSelectedPlanet()
+{
+	//If no planet selected, find one that is owned by self
+	if(!SelectedPlanet)
+		SelectedPlanet = *GetGameOnClient()->GetPlanets().FindByPredicate([this](APlanet* Planet){ return Planet->IsOwnedByPlayer(Username); });
+
+	return SelectedPlanet;
+}
 
 #pragma endregion

@@ -54,7 +54,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category=Planets)
 	TArray<APlanet*> Planets;
 
+	//Gameplay
+private:
+	void GoToNextRound();
 public:
+	void RegisterPlanet(APlanet* Planet);
+
 	//Setup
 	AGameManager();
 	virtual bool IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const override;
@@ -77,6 +82,8 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsPlayerPartOfGame(FString Username) const { return AllPlayers.FindByPredicate([Username](const FPlayerData& Player){ return Player.Username == Username; }) != nullptr; }
 
+	TArray<APlanet*> GetPlanets() const { return Planets; }
+	
 	//Delegates
 	UPROPERTY(BlueprintAssignable)
 	FNoParamDelegate OnPlayersUpdated;

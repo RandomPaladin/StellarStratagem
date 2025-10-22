@@ -5,8 +5,12 @@
 #include "StellarStratagem/Actions/ActionBase.h"
 #include "StellarPlayerController.generated.h"
 
+class APlanet;
+class AGameManager;
 class USpringArmComponent;
 class AServerManager;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlanetSelectedDelegate, APlanet*, Planet);
 
 USTRUCT(BlueprintType)
 struct FPlayerData
@@ -39,6 +43,7 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
+	//Setup vars
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UWorld> MainGameMap;
 	UPROPERTY()
@@ -49,7 +54,14 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 	UPROPERTY(VisibleAnywhere, Replicated)
 	FString Username;
 
-	//Input
+	UPROPERTY()
+	AGameManager* GameManager;
+
+	//Player vars
+	UPROPERTY(VisibleAnywhere, Replicated)
+	int GoldAmount = 0;
+
+	//Input vars
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	AActor* CamActor;
@@ -62,9 +74,14 @@ protected:
 	bool TwoFingersTouching = false;
 	UPROPERTY(EditAnywhere)
 	float ScrollAcceleration = 5.f;
+	UPROPERTY(EditAnywhere)
+	float PlanetSelectRadius = 200.f; //How close the player needs to click to a planet to count as selecting it
+	float PlanetSelectRadiusSqr;
+	UPROPERTY()
+	APlanet* SelectedPlanet;
 
 private:
-	//Funcs
+	//Server RPCs
 	UFUNCTION(Server, Reliable)
 	void SendAction_Server(const FActionData& ActionData);
 
@@ -79,13 +96,16 @@ private:
 
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void TryEndTurn_Server();
-
+	
+	//Other funcs
 	UFUNCTION(BlueprintCallable)
 	void CloseApplication();
 	UFUNCTION(BlueprintCallable)
 	void GoToMainMenu();
+	AGameManager* GetGameOnClient();
+	FVector ScreenToWorldLoc(const FVector& ScreenLoc) const;
 
-	//Input
+	//Input funcs
 	UFUNCTION(BlueprintCallable)
 	void OnPress(const FVector& Loc);
 	UFUNCTION(BlueprintCallable)
@@ -93,9 +113,20 @@ private:
 	UFUNCTION(BlueprintCallable)
 	void OnPressReleased(const FVector& Loc);
 
+	//Public
 public:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	void AddGold(int Gold);
+
+	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FString GetUsername() { return Username; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	APlanet* GetSelectedPlanet();
+
+	//Delegates
+	UPROPERTY(BlueprintAssignable)
+	FOnPlanetSelectedDelegate OnPlanetSelected;
 };
