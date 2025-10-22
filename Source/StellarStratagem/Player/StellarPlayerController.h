@@ -125,6 +125,8 @@ public:
 	FString GetUsername() { return Username; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	APlanet* GetSelectedPlanet();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	int GetGold() const { return GoldAmount; }
 
 	//Delegates
 	UPROPERTY(BlueprintAssignable)
