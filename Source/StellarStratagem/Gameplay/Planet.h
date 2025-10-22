@@ -25,10 +25,13 @@ struct FBuildingSlot
 
 	UPROPERTY(BlueprintReadOnly)
 	TEnumAsByte<EBuildingType> BuildingType;
+	UPROPERTY(BlueprintReadOnly)
+	bool MarkedForDestroy;
 	
 	FBuildingSlot()
 	{
 		BuildingType = None;
+		MarkedForDestroy = false;
 	}
 };
 
@@ -83,4 +86,6 @@ public:
 	FString GetPlanetName() const { return PlanetName; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	TArray<FBuildingSlot> GetBuildingSlots() const { return BuildingSlots; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FBuildingSlot GetBuildingSlot(const int BuildingSlotIndex) const { return BuildingSlots[BuildingSlotIndex]; }
 };
