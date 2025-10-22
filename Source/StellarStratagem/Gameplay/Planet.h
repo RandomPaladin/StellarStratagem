@@ -5,6 +5,7 @@
 #include "StellarStratagem/Player/StellarPlayerController.h"
 #include "Planet.generated.h"
 
+class UDataTable;
 class AGameManager;
 enum EPlanetGrade : int;
 class UPlanetGradeData;
@@ -24,6 +25,8 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 
 	UPROPERTY(EditAnywhere)
 	UPlanetGradeData* GradesData;
+	UPROPERTY(EditAnywhere)
+	UDataTable* NamesData;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	TEnumAsByte<EPlanetGrade> Grade;
 
