@@ -52,13 +52,13 @@ void AGameManager::AddPlayer(AStellarPlayerController* Player)
 	}
 	
 	//Add player
-	AllPlayers.AddUnique(FPlayerData{Player->GetUsername()});
+	AllPlayers.AddUnique(Player->GetPlayerData());
 	AActor* PlayerActor = Player;
 	ConnectedPlayers.Add(PlayerActor, Player);
 
 	ForceNetUpdate();
 	
-	UE_LOG(LogTemp, Warning, TEXT("ADDED PLAYER %s TO GAME"), *Player->GetUsername())
+	UE_LOG(LogTemp, Warning, TEXT("ADDED PLAYER %s TO GAME"), *Player->GetPlayerData().Username)
 }
 
 void AGameManager::RemovePlayer(AStellarPlayerController* Player)
@@ -71,13 +71,13 @@ void AGameManager::RemovePlayer(AStellarPlayerController* Player)
 	}
 	
 	//Remove player
-	AllPlayers.RemoveAll([Player](const FPlayerData& PlayerData) {return PlayerData.Username == Player->GetUsername();});
+	AllPlayers.RemoveAll([Player](const FPlayerData& PlayerData) { return PlayerData == Player->GetPlayerData(); });
 	AActor* PlayerActor = Player;
 	ConnectedPlayers.Remove(PlayerActor);
 
 	ForceNetUpdate();
 
-	UE_LOG(LogTemp, Warning, TEXT("REMOVED PLAYER %s FROM GAME"), *Player->GetUsername())
+	UE_LOG(LogTemp, Warning, TEXT("REMOVED PLAYER %s FROM GAME"), *Player->GetPlayerData().Username)
 }
 
 #pragma endregion
@@ -161,15 +161,15 @@ void AGameManager::EndTurn(AStellarPlayerController* Player)
 	}
 	
 	//Ensure player is awaited
-	if(!AwaitedPlayers.ContainsByPredicate([Player](const FPlayerData& PlayerData){ return PlayerData.Username == Player->GetUsername(); }))
+	if(!AwaitedPlayers.ContainsByPredicate([Player](const FPlayerData& PlayerData){ return PlayerData == Player->GetPlayerData(); }))
 	{
 		UE_LOG(LogTemp, Error, TEXT("PLAYER IS NOT AWAITED"))
 		return;
 	}
 
 	//Remove awaited player from list
-	UE_LOG(LogTemp, Warning, TEXT("PLAYER %s ENDED THEIR TURN"), *Player->GetUsername())
-	AwaitedPlayers.RemoveAll([Player](const FPlayerData& PlayerData){ return PlayerData.Username == Player->GetUsername(); });
+	UE_LOG(LogTemp, Warning, TEXT("PLAYER %s ENDED THEIR TURN"), *Player->GetPlayerData().Username)
+	AwaitedPlayers.RemoveAll([Player](const FPlayerData& PlayerData){ return PlayerData == Player->GetPlayerData(); });
 
 	//Move on to the next round if all awaited players took their turn
 	if(AwaitedPlayers.Num() == 0)

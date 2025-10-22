@@ -10,7 +10,7 @@ void AStellarPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AStellarPlayerController, Username);
+	DOREPLIFETIME(AStellarPlayerController, PlayerData);
 	DOREPLIFETIME(AStellarPlayerController, GoldAmount);
 }
 
@@ -24,7 +24,7 @@ void AStellarPlayerController::BeginPlay()
 
 	//Set random username
 	if(HasAuthority())
-		Username = FString::FromInt(FMath::RandRange(0, 10000000));
+		PlayerData = {FString::FromInt(FMath::RandRange(0, 10000000))};
 
 	Super::BeginPlay();
 }
@@ -194,7 +194,7 @@ APlanet* AStellarPlayerController::GetSelectedPlanet()
 {
 	//If no planet selected, find one that is owned by self
 	if(!SelectedPlanet)
-		SelectedPlanet = *GetGameOnClient()->GetPlanets().FindByPredicate([this](APlanet* Planet){ return Planet->IsOwnedByPlayer(Username); });
+		SelectedPlanet = *GetGameOnClient()->GetPlanets().FindByPredicate([this](APlanet* Planet){ return Planet->IsOwnedByPlayer(PlayerData); });
 
 	return SelectedPlanet;
 }

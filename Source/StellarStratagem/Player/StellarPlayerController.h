@@ -52,7 +52,7 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 	FString CurrentGameCode;
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
-	FString Username;
+	FPlayerData PlayerData;
 
 	UPROPERTY()
 	AGameManager* GameManager;
@@ -122,7 +122,7 @@ public:
 
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FString GetUsername() { return Username; }
+	FPlayerData GetPlayerData() const { return PlayerData; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	APlanet* GetSelectedPlanet();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
