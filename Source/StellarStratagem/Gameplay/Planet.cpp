@@ -1,5 +1,6 @@
 #include "Planet.h"
 #include "GameManager.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "StellarStratagem/Data/PlanetGradeData.h"
 
@@ -29,10 +30,12 @@ void APlanet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	DOREPLIFETIME(APlanet, Grade);
 	DOREPLIFETIME(APlanet, IndustrialBuildings);
 	DOREPLIFETIME(APlanet, ResearchBuildings);
+	DOREPLIFETIME(APlanet, BuildingSlots);
 }
 
 void APlanet::Setup(AGameManager* Game)
 {
+	//Ensure setup only occurs on server
 	if(!HasAuthority())
 	{
 		UE_LOG(LogTemp, Error, TEXT("TRYING TO SET UP PLANET OUTSIDE OF SERVER"))
@@ -45,13 +48,15 @@ void APlanet::Setup(AGameManager* Game)
 	//Set random grade
 	TArray<TEnumAsByte<EPlanetGrade>> AllGradesInData;
 	GradesData->Grades.GetKeys(AllGradesInData);
-	TEnumAsByte<EPlanetGrade> RandomGrade = AllGradesInData[FMath::RandRange(0, AllGradesInData.Num() - 1)];
-	Grade = RandomGrade;
+	Grade = AllGradesInData[FMath::RandRange(0, AllGradesInData.Num() - 1)];
+
+	//Set random building slots
+	BuildingSlots = GradesData->GenerateRandomBuildingSlotAmount(Grade);
 
 	UE_LOG(LogTemp, Warning, TEXT("SETUP PLANET"))
 
-	//Send random mesh index to clients
-	SetPlanetMesh(FMath::RandRange(0, PlanetMeshes.Num() - 1));
+	//Setup on clients
+	Setup_Client(FMath::RandRange(0, PlanetMeshes.Num() - 1));
 }
 
 void APlanet::SetOwningPlayer(const FPlayerData& NewOwningPlayer)
@@ -59,12 +64,18 @@ void APlanet::SetOwningPlayer(const FPlayerData& NewOwningPlayer)
 	OwningPlayer = NewOwningPlayer;
 }
 
-void APlanet::SetPlanetMesh_Implementation(const int MeshIndex)
+void APlanet::Setup_Client_Implementation(const int MeshIndex)
 {
-	//Ignore art stuff on server
+	//Ignore client stuff on server
 	if(HasAuthority())
 		return;
 
 	//Set new mesh
 	MeshComp->SetStaticMesh(PlanetMeshes[MeshIndex]);
+
+	//Get game manager
+	GameManager = Cast<AGameManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AGameManager::StaticClass()));
+
+	//Register self in game manager
+	GameManager->RegisterPlanet(this);
 }

@@ -33,7 +33,7 @@ struct FGradeData
 	UPROPERTY(EditAnywhere)
 	FIntPoint BuildingSlotsRange = FIntPoint{1, 12};
 	UPROPERTY(EditAnywhere)
-	FFloatCurve BuildingSlotsDistribution;
+	FRuntimeFloatCurve BuildingSlotsDistribution;
 };
 
 UCLASS(Blueprintable)
@@ -44,4 +44,6 @@ class STELLARSTRATAGEM_API UPlanetGradeData : public UDataAsset
 public:
 	UPROPERTY(EditAnywhere)
 	TMap<TEnumAsByte<EPlanetGrade>, FGradeData> Grades;
+	
+	int GenerateRandomBuildingSlotAmount(EPlanetGrade Grade);
 };

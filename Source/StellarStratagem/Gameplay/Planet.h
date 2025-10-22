@@ -26,7 +26,9 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 	UPlanetGradeData* GradesData;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	TEnumAsByte<EPlanetGrade> Grade;
-	
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	int BuildingSlots = 0;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	int IndustrialBuildings = 0;
 	UPROPERTY(VisibleAnywhere, Replicated)
@@ -37,7 +39,7 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 	TArray<UStaticMesh*> PlanetMeshes;
 
 	UFUNCTION(NetMulticast, Reliable)
-	void SetPlanetMesh(int MeshIndex);
+	void Setup_Client(int MeshIndex);
 
 public:
 	APlanet();
@@ -46,6 +48,7 @@ public:
 
 	void Setup(AGameManager* Game);
 	void SetOwningPlayer(const FPlayerData& NewOwningPlayer);
+	bool IsOwnedByPlayer(const FString& Username) const { return OwningPlayer.Username == Username; }
 	bool IsOwnedByPlayer() const { return OwningPlayer.IsValid(); }
 	TEnumAsByte<EPlanetGrade> GetGrade() const { return Grade; }
 };
