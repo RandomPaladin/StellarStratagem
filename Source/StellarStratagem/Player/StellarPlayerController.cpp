@@ -65,6 +65,15 @@ void AStellarPlayerController::TryStartGame_Server_Implementation()
 
 #pragma endregion
 
+#pragma region Replication Funcs
+
+void AStellarPlayerController::OnRep_GoldAmount() const
+{
+	OnGoldUpdated.Broadcast(GoldAmount);
+}
+
+#pragma endregion
+
 void AStellarPlayerController::CloseApplication()
 {
 	//TODO REMOVE SELF FROM GAME LOBBY

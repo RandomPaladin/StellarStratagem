@@ -12,6 +12,7 @@ class AServerManager;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlanetSelectedDelegate, APlanet*, Planet);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMessageReceivedDelegate, FString, Message);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGoldUpdatedDelegate, int, NewGoldAmount);
 
 USTRUCT(BlueprintType)
 struct FPlayerData
@@ -71,7 +72,7 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 	//Player vars
 	UPROPERTY(EditAnywhere)
 	int StartingGold = 100;
-	UPROPERTY(VisibleAnywhere, Replicated)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_GoldAmount)
 	int GoldAmount = 0;
 
 	//Input vars
@@ -94,6 +95,10 @@ protected:
 	APlanet* SelectedPlanet;
 
 private:
+	//Replication funcs
+	UFUNCTION()
+	void OnRep_GoldAmount() const;
+	
 	//Game setup
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void TryCreateGame_Server(const FString& GameCode);
@@ -147,5 +152,6 @@ public:
 	FOnPlanetSelectedDelegate OnPlanetSelected;
 	UPROPERTY(BlueprintAssignable)
 	FOnMessageReceivedDelegate OnMessageReceived;
-	
+	UPROPERTY(BlueprintAssignable)
+	FOnGoldUpdatedDelegate OnGoldUpdated;
 };
