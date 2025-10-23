@@ -69,6 +69,8 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 	AGameManager* GameManager;
 
 	//Player vars
+	UPROPERTY(EditAnywhere)
+	int StartingGold = 100;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	int GoldAmount = 0;
 

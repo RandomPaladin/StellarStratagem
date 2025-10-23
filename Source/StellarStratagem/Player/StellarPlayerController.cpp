@@ -24,9 +24,15 @@ void AStellarPlayerController::BeginPlay()
 	//Get server manager
 	ServerManager = Cast<AServerManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AServerManager::StaticClass()));
 
-	//Set random username
+	//On server setup
 	if(HasAuthority())
+	{
+		//Set random username
 		PlayerData = {FString::FromInt(FMath::RandRange(0, 10000000))};
+
+		//Set initial gold amount
+		GoldAmount = StartingGold;
+	}
 
 	Super::BeginPlay();
 }
