@@ -28,6 +28,7 @@ void AGameManager::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(AGameManager, Round);
 	DOREPLIFETIME(AGameManager, GameStarted);
 	DOREPLIFETIME(AGameManager, AllPlayers);
+	DOREPLIFETIME(AGameManager, PlayersResolutionResults);
 }
 
 void AGameManager::BeginPlay()
@@ -154,7 +155,6 @@ void AGameManager::StartGame()
 void AGameManager::EndTurn(AStellarPlayerController* Player)
 {
 	//Remove awaited player from list
-	UE_LOG(LogTemp, Warning, TEXT("PLAYER %s ENDED THEIR TURN"), *Player->GetPlayerData().Username)
 	AwaitedPlayers.RemoveAll([Player](const FPlayerData& PlayerData){ return PlayerData == Player->GetPlayerData(); });
 
 	//Move on to the next round if all awaited players took their turn
@@ -164,13 +164,51 @@ void AGameManager::EndTurn(AStellarPlayerController* Player)
 
 void AGameManager::GoToNextRound()
 {
-	//Increment round
 	UE_LOG(LogTemp, Warning, TEXT("ALL PLAYERS ENDED THEIR TURN, GOING TO NEXT ROUND"))
+	
+	//Increment round
 	Round++;
 	AwaitedPlayers = AllPlayers;
 
+	//Ensure resolution results contains an entry for each player
+	for (FPlayerData Player : AllPlayers)
+	{
+		if(!PlayersResolutionResults.ContainsByPredicate([Player](const FRoundResolutionResults& Results){ return Results.Player == Player; }))
+			PlayersResolutionResults.Add(Player);
+	}
+
+	//Clear resolution results
+	for (FRoundResolutionResults& PlayerResolutionResult : PlayersResolutionResults)
+		PlayerResolutionResult.Results.Empty();
+
 	//Generate building resources
-	//TODO
+	TMap<FPlayerData, int> GeneratedGold;
+	for (APlanet* Planet : Planets)
+	{
+		//Ignore unowned planets
+		if(!Planet->IsOwnedByAnyPlayer())
+			continue;
+
+		//Generate gold
+		const int GoldAmount = Planet->GetGeneratedGoldAmount();
+
+		//Give generated gold to owning player
+		FPlayerData OwningPlayer = Planet->GetOwningPlayer();
+		GetPlayerControllerByPlayerData(OwningPlayer)->AddGold(GoldAmount); //TODO HANDLE DOING THIS WHILE PLAYER IS DISCONNECTED
+
+		//Record amount of gold generated per player
+		if(GeneratedGold.Contains(OwningPlayer))
+			GeneratedGold[OwningPlayer] += GoldAmount;
+		else
+			GeneratedGold.Add(OwningPlayer, GoldAmount);
+	}
+
+	//Add entries for gold production
+	for (TTuple<FPlayerData, int> Kvp : GeneratedGold)
+	{
+		FRoundResolutionResults* PlayerEntry = PlayersResolutionResults.FindByPredicate([Kvp](const FRoundResolutionResults& Results) { return Results.Player == Kvp.Key; });
+		PlayerEntry->Results.Add({RoundResolutionResultType_Resources, FString::Printf(TEXT("Your planets produced %d credits."), Kvp.Value)});
+	}
 	
 	//Build planned buildings
 
@@ -230,7 +268,7 @@ TArray<APlanet*> AGameManager::GetPlanetsOwnedByPlayer(const FPlayerData& Player
 	TArray<APlanet*> OwnedPlanets;
 	for (APlanet* Planet : Planets)
 	{
-		if(Planet->IsOwnedByPlayer(Player.Username))
+		if(Planet->IsOwnedByPlayer(Player))
 			OwnedPlanets.Add(Planet);
 	}
 

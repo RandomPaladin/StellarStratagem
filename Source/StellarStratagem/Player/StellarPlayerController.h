@@ -31,6 +31,8 @@ struct FPlayerData
 		Username = InUsername;
 	}
 
+	bool IsValid() const { return !Username.IsEmpty(); }
+	
 	bool operator ==(const FPlayerData& Other) const
 	{
 		return Username == Other.Username;
@@ -40,9 +42,12 @@ struct FPlayerData
 	{
 		return Username != Other.Username;
 	}
-
-	bool IsValid() const { return !Username.IsEmpty(); }
 };
+
+FORCEINLINE uint32 GetTypeHash(const FPlayerData& PlayerData)
+{
+	return GetTypeHash(PlayerData.Username);
+}
 
 UCLASS()
 class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController

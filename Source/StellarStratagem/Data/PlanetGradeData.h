@@ -26,7 +26,7 @@ struct FGradeData
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	float GoldPerFactoryPerRound;
+	int GoldPerFactoryPerRound;
 	UPROPERTY(EditAnywhere)
 	float ShipsPerFactoryPerRound;
 

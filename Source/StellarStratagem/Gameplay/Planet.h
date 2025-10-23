@@ -75,6 +75,8 @@ public:
 	void Setup(AGameManager* Game, int Index);
 	void SetOwningPlayer(const FPlayerData& NewOwningPlayer);
 	void Build(AStellarPlayerController* Player, const int BuildingSlotIndex, const EBuildingType BuildingType);
+	int GetGeneratedGoldAmount();
+	float GenerateShips();
 
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)

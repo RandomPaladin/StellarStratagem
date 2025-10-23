@@ -100,3 +100,22 @@ void APlanet::Build(AStellarPlayerController* Player, const int BuildingSlotInde
 	//Build
 	BuildingSlots[BuildingSlotIndex].BuildingType = BuildingType;
 }
+
+int APlanet::GetGeneratedGoldAmount()
+{
+	//Find factory amount
+	int FactoryAmount = 0;
+	for (FBuildingSlot BuildingSlot : BuildingSlots)
+	{
+		if(BuildingSlot.BuildingType == BuildingType_Factory)
+			FactoryAmount++;
+	}
+
+	//Multiply with gold per factory from grades data
+	return FactoryAmount * GradesData->Grades[Grade].GoldPerFactoryPerRound;
+}
+
+float APlanet::GenerateShips()
+{
+	return 0.f; //TODO
+}
