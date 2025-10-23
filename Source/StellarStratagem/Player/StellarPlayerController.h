@@ -102,8 +102,6 @@ private:
 	void SendAction_Server(const FActionData& ActionData);
 	UFUNCTION(BlueprintCallable, Client, Reliable)
 	void ReceiveActionResult_Client(const FActionResult& ActionResult);
-	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void TryEndTurn_Server();
 	
 	//Other funcs
 	UFUNCTION(BlueprintCallable)

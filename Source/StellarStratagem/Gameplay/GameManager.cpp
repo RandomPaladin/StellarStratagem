@@ -153,20 +153,6 @@ void AGameManager::StartGame()
 
 void AGameManager::EndTurn(AStellarPlayerController* Player)
 {
-	//Ensure this is only attempted on the server
-	if(!HasAuthority())
-	{
-		UE_LOG(LogTemp, Error, TEXT("TRYING TO END TURN OUTSIDE OF SERVER"))
-		return;
-	}
-	
-	//Ensure player is awaited
-	if(!AwaitedPlayers.ContainsByPredicate([Player](const FPlayerData& PlayerData){ return PlayerData == Player->GetPlayerData(); }))
-	{
-		UE_LOG(LogTemp, Error, TEXT("PLAYER IS NOT AWAITED"))
-		return;
-	}
-
 	//Remove awaited player from list
 	UE_LOG(LogTemp, Warning, TEXT("PLAYER %s ENDED THEIR TURN"), *Player->GetPlayerData().Username)
 	AwaitedPlayers.RemoveAll([Player](const FPlayerData& PlayerData){ return PlayerData == Player->GetPlayerData(); });

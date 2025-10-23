@@ -3,6 +3,7 @@
 #include "Net/UnrealNetwork.h"
 #include "StellarStratagem/Actions/ActionType.h"
 #include "StellarStratagem/Actions/BuildAction.h"
+#include "StellarStratagem/Actions/EndTurnAction.h"
 #include "StellarStratagem/Gameplay/GameManager.h"
 #include "StellarStratagem/Gameplay/Planet.h"
 #include "StellarStratagem/Gameplay/ServerManager.h"
@@ -119,7 +120,7 @@ void AStellarPlayerController::SendAction_Server_Implementation(const FActionDat
 			ClassType = UBuildAction::StaticClass();
 			break;
 		case ActionType_EndTurn:
-			ClassType = UActionBase::StaticClass(); //TODO TURN INTO AN ACTION
+			ClassType = UEndTurnAction::StaticClass();
 			break;
 		default:
 			UE_LOG(LogTemp, Error, TEXT("ACTION TYPE IS NOT BEING HANDLED"))
@@ -142,11 +143,6 @@ void AStellarPlayerController::ReceiveActionResult_Client_Implementation(const F
 	
 	UE_LOG(LogTemp, Warning, TEXT("RESULT: %s"), *ActionResult.Message)
 	OnMessageReceived.Broadcast(ActionResult.Message);
-}
-
-void AStellarPlayerController::TryEndTurn_Server_Implementation()
-{
-	GetGameManager()->EndTurn(this);
 }
 
 #pragma endregion

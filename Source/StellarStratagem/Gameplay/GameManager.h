@@ -77,6 +77,7 @@ public:
 	//Getters
 	TMap<AActor*, AStellarPlayerController*> GetConnectedPlayers() const { return ConnectedPlayers; }
 	TArray<AStellarPlayerController*> GetConnectedPlayerControllers() const;
+	TArray<FPlayerData> GetAwaitedPlayers() const { return AwaitedPlayers; }
 	int GetPlayerAmount() const { return AllPlayers.Num(); }
 	bool GetGameStarted() const { return GameStarted; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)

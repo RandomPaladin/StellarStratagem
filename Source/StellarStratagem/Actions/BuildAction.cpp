@@ -5,8 +5,6 @@
 
 FActionResult UBuildAction::PerformAction(AGameManager* GameManager, AStellarPlayerController* Player)
 {
-	Super::PerformAction(GameManager, Player);
-
 	APlanet* Planet = GameManager->GetPlanets()[Data.Number];
 	const int BuildingSlotIndex = Data.Number2;
 
