@@ -2,21 +2,15 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "StellarStratagem/Actions/BuildingType.h"
+#include "StellarStratagem/Data/PlanetGradeData.h"
 #include "StellarStratagem/Player/StellarPlayerController.h"
 #include "Planet.generated.h"
 
+class UPlanetBuildingsData;
 class UDataTable;
 class AGameManager;
-enum EPlanetGrade : int;
 class UPlanetGradeData;
-
-UENUM(BlueprintType)
-enum EBuildingType
-{
-	None,
-	Factory,
-	Research,
-};
 
 USTRUCT(BlueprintType)
 struct FBuildingSlot
@@ -30,7 +24,7 @@ struct FBuildingSlot
 	
 	FBuildingSlot()
 	{
-		BuildingType = None;
+		BuildingType = BuildingType_None;
 		MarkedForDestroy = false;
 	}
 };
@@ -39,7 +33,8 @@ UCLASS()
 class STELLARSTRATAGEM_API APlanet : public AActor
 {
 	GENERATED_BODY()
-	
+
+	//Setup
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* MeshComp;
 	UPROPERTY()
@@ -47,10 +42,17 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 	UPROPERTY(VisibleAnywhere, Replicated)
 	FPlayerData OwningPlayer;
 
+	//Data
 	UPROPERTY(EditAnywhere)
 	UPlanetGradeData* GradesData;
 	UPROPERTY(EditAnywhere)
 	UDataTable* NamesData;
+	UPROPERTY(EditAnywhere)
+	UPlanetBuildingsData* BuildingsData;
+
+	//Values
+	UPROPERTY(VisibleAnywhere, Replicated)
+	int PlanetIndex = -1;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	FString PlanetName;
 	UPROPERTY(VisibleAnywhere, Replicated)
@@ -70,14 +72,18 @@ public:
 	virtual bool IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	void Setup(AGameManager* Game);
+	void Setup(AGameManager* Game, int Index);
 	void SetOwningPlayer(const FPlayerData& NewOwningPlayer);
+	void Build(AStellarPlayerController* Player, const int BuildingSlotIndex, const EBuildingType BuildingType);
 
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	AGameManager* GetGameManager() const { return GameManager; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	int GetPlanetIndex() const { return PlanetIndex; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsOwnedByPlayer(const FPlayerData& PlayerData) const { return OwningPlayer == PlayerData; }
-	bool IsOwnedByPlayer() const { return OwningPlayer.IsValid(); }
+	bool IsOwnedByAnyPlayer() const { return OwningPlayer.IsValid(); }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FPlayerData GetOwningPlayer() const { return OwningPlayer; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -86,6 +92,7 @@ public:
 	FString GetPlanetName() const { return PlanetName; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	TArray<FBuildingSlot> GetBuildingSlots() const { return BuildingSlots; }
+	UPlanetBuildingsData* GetBuildingsData() const { return BuildingsData; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FBuildingSlot GetBuildingSlot(const int BuildingSlotIndex) const { return BuildingSlots[BuildingSlotIndex]; }
 };

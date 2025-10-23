@@ -111,7 +111,7 @@ void AGameManager::StartGame()
 		FVector SpawnLoc = {FMath::RandRange(SpawnPlanetXLocRange.X, SpawnPlanetXLocRange.Y), FMath::RandRange(SpawnPlanetYLocRange.X, SpawnPlanetYLocRange.Y), 0.f};
 		FRotator SpawnRot = {0.f, FMath::RandRange(SpawnPlanetRotRange.X, SpawnPlanetRotRange.Y), 0.f};
 		APlanet* SpawnedPlanet = GetWorld()->SpawnActor<APlanet>(PlanetTemplate, SpawnLoc, SpawnRot);
-		SpawnedPlanet->Setup(this);
+		SpawnedPlanet->Setup(this, i);
 		Planets.Add(SpawnedPlanet);
 	}
 	
@@ -126,7 +126,7 @@ void AGameManager::StartGame()
 		for(int i = 0; i < Planets.Num(); i++)
 		{
 			//Ignore already owned planets
-			if(Planets[i]->IsOwnedByPlayer())
+			if(Planets[i]->IsOwnedByAnyPlayer())
 				continue;
 
 			//Check if this planet's grade is closer to the middle grade

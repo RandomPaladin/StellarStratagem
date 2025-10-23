@@ -3,6 +3,7 @@
 #include "Engine/DataTable.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "StellarStratagem/Data/PlanetBuildingsData.h"
 #include "StellarStratagem/Data/PlanetGradeData.h"
 #include "StellarStratagem/Data/PlanetNamesDataTable.h"
 
@@ -29,12 +30,13 @@ void APlanet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(APlanet, OwningPlayer);
+	DOREPLIFETIME(APlanet, PlanetIndex);
 	DOREPLIFETIME(APlanet, PlanetName);
 	DOREPLIFETIME(APlanet, Grade);
 	DOREPLIFETIME(APlanet, BuildingSlots);
 }
 
-void APlanet::Setup(AGameManager* Game)
+void APlanet::Setup(AGameManager* Game, const int Index)
 {
 	//Ensure setup only occurs on server
 	if(!HasAuthority())
@@ -43,8 +45,9 @@ void APlanet::Setup(AGameManager* Game)
 		return;
 	}
 	
-	//Record game manager
+	//Record game manager + index
 	GameManager = Game;
+	PlanetIndex = Index;
 
 	//Set random name
 	TArray<FPlanetNamesDataTable*> Rows;
@@ -87,4 +90,13 @@ void APlanet::Setup_Client_Implementation(const int MeshIndex)
 
 	//Register self in game manager
 	GameManager->RegisterPlanet(this);
+}
+
+void APlanet::Build(AStellarPlayerController* Player, const int BuildingSlotIndex, const EBuildingType BuildingType)
+{
+	//Remove gold
+	Player->RemoveGold(BuildingsData->Buildings[BuildingType].GoldCost);
+
+	//Build
+	BuildingSlots[BuildingSlotIndex].BuildingType = BuildingType;
 }
