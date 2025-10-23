@@ -12,6 +12,60 @@ class AStellarPlayerController;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FNoParamDelegate);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameStateChanged, bool, Started);
 
+UENUM(BlueprintType)
+enum ERoundResolutionResultType
+{
+	RoundResolutionResultType_None,
+	RoundResolutionResultType_Combat,
+	RoundResolutionResultType_Resources,
+};
+
+USTRUCT(BlueprintType)
+struct FRoundResolutionResult
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere)
+	TEnumAsByte<ERoundResolutionResultType> ResultType;
+	UPROPERTY(VisibleAnywhere)
+	FString Result;
+
+	FRoundResolutionResult()
+	{
+		ResultType = RoundResolutionResultType_None;
+		Result = "";
+	}
+
+	FRoundResolutionResult(const TEnumAsByte<ERoundResolutionResultType> InResultType, FString InResult)
+	{
+		ResultType = InResultType;
+		Result = InResult;
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FRoundResolutionResults
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere)
+	FPlayerData Player;
+	UPROPERTY(VisibleAnywhere)
+	TArray<FRoundResolutionResult> Results;
+
+	FRoundResolutionResults()
+	{
+		Player = {};
+		Results = {};
+	}
+
+	FRoundResolutionResults(const FPlayerData& InPlayerData)
+	{
+		Player = InPlayerData;
+		Results = {};
+	}
+};
+
 UCLASS()
 class STELLARSTRATAGEM_API AGameManager : public AActor
 {
@@ -60,7 +114,12 @@ private:
 public:
 	void RegisterPlanet(APlanet* Planet);
 
+private:
+	UPROPERTY(VisibleAnywhere, Replicated)
+	TArray<FRoundResolutionResults> PlayersResolutionResults;
+
 	//Setup
+public:
 	AGameManager();
 	virtual bool IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -77,11 +136,12 @@ public:
 	//Getters
 	TMap<AActor*, AStellarPlayerController*> GetConnectedPlayers() const { return ConnectedPlayers; }
 	TArray<AStellarPlayerController*> GetConnectedPlayerControllers() const;
+	AStellarPlayerController* GetPlayerControllerByPlayerData(const FPlayerData& PlayerData);
 	TArray<FPlayerData> GetAwaitedPlayers() const { return AwaitedPlayers; }
 	int GetPlayerAmount() const { return AllPlayers.Num(); }
 	bool GetGameStarted() const { return GameStarted; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	bool IsPlayerPartOfGame(FString Username) const { return AllPlayers.FindByPredicate([Username](const FPlayerData& Player){ return Player.Username == Username; }) != nullptr; }
+	bool IsPlayerPartOfGame(const FPlayerData& Player) const { return AllPlayers.FindByPredicate([Player](const FPlayerData& PlayerItem){ return PlayerItem == Player; }) != nullptr; }
 
 	TArray<APlanet*> GetPlanets() const { return Planets; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)

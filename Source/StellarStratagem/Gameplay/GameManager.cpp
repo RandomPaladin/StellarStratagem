@@ -214,6 +214,17 @@ TArray<AStellarPlayerController*> AGameManager::GetConnectedPlayerControllers() 
 	return PlayerControllers;
 }
 
+AStellarPlayerController* AGameManager::GetPlayerControllerByPlayerData(const FPlayerData& PlayerData)
+{
+	for (TTuple<AActor*, AStellarPlayerController*> Kvp : ConnectedPlayers)
+	{
+		if(Kvp.Value->GetPlayerData() == PlayerData)
+			return Kvp.Value;
+	}
+
+	return nullptr;
+}
+
 TArray<APlanet*> AGameManager::GetPlanetsOwnedByPlayer(const FPlayerData& Player)
 {
 	TArray<APlanet*> OwnedPlanets;
