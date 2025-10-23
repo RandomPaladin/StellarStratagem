@@ -29,28 +29,24 @@ FActionResult UBuildAction::PerformAction(AGameManager* GameManager, AStellarPla
 		return {false, "Invalid building slot index."};
 	}
 
-	//Ensure given building type is valid
-	if(Data.BuildingType == BuildingType_None)
+	const FBuildingSlot Slot = Planet->GetBuildingSlots()[BuildingSlotIndex];
+	const TEnumAsByte<EBuildingType> TargetBuildingType = Data.BuildingType;
+	
+	const bool HasCurrentBuilding = Slot.CurrentBuildingType != BuildingType_None;
+	const bool HasTargetBuilding = TargetBuildingType != BuildingType_None;
+	
+	//Ensure player has enough gold if trying to plan new building
+	if(!HasCurrentBuilding && HasTargetBuilding) 
 	{
-		UE_LOG(LogTemp, Error, TEXT("GIVEN BUILDING TYPE IS NOT VALID"))
-		return {false, "Given building type is invalid."};
-	}
-
-	//Ensure given building slot is empty
-	if(Planet->GetBuildingSlots()[BuildingSlotIndex].BuildingType != BuildingType_None)
-	{
-		UE_LOG(LogTemp, Error, TEXT("GIVEN BUILDING SLOT IS ALREADY FILLED"))
-		return {false, "This building slot is already in use."};
-	}
-
-	//Ensure player has enough gold to build building
-	const int GoldCost = Planet->GetBuildingsData()->Buildings[Data.BuildingType].GoldCost;
-	if(Player->GetGold() < GoldCost)
-	{
-		UE_LOG(LogTemp, Error, TEXT("PLAYER DOES NOT HAVE ENOUGH GOLD TO BUILD THIS"))
-		return {false, FString::Printf(TEXT("You need %d credits to build this."), GoldCost)};
+		//Ensure the player has enough gold
+		const int GoldCost = Planet->GetBuildingsData()->Buildings[TargetBuildingType].GoldCost;
+		if(Player->GetGold() < GoldCost)
+		{
+			UE_LOG(LogTemp, Error, TEXT("PLAYER DOES NOT HAVE ENOUGH GOLD TO BUILD THIS"))
+			return {false, FString::Printf(TEXT("You need %d credits to build this."), GoldCost)};
+		}
 	}
 	
-	Planet->Build(Player, BuildingSlotIndex, Data.BuildingType);
+	Planet->UpdateBuilding(Player, BuildingSlotIndex, Data.BuildingType);
 	return {true, ""};
 }

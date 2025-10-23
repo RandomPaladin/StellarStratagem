@@ -92,14 +92,49 @@ void APlanet::Setup_Client_Implementation(const int MeshIndex)
 	GameManager->RegisterPlanet(this);
 }
 
-void APlanet::Build(AStellarPlayerController* Player, const int BuildingSlotIndex, const EBuildingType BuildingType)
+void APlanet::UpdateBuilding(AStellarPlayerController* Player, const int BuildingSlotIndex, const EBuildingType TargetBuildingType)
 {
-	//Remove gold
-	Player->RemoveGold(BuildingsData->Buildings[BuildingType].GoldCost);
+	FBuildingSlot* Slot = &BuildingSlots[BuildingSlotIndex];
+	
+	const bool HasCurrentBuilding = Slot->CurrentBuildingType != BuildingType_None;
+	const bool HasPlannedBuilding = Slot->TargetBuildingType != BuildingType_None;
+	const bool HasTargetBuilding = TargetBuildingType != BuildingType_None;
+	
+	//Handle building update
+	if(!HasCurrentBuilding && HasTargetBuilding) //Plan new building
+	{
+		//Remove gold
+		Player->RemoveGold(BuildingsData->Buildings[TargetBuildingType].GoldCost);
 
-	//Build
-	BuildingSlots[BuildingSlotIndex].BuildingType = BuildingType;
+		//Plan build
+		Slot->TargetBuildingType = TargetBuildingType;
+	}
+	else if(!HasCurrentBuilding && HasPlannedBuilding) //Remove plan for new building
+	{
+		//Give gold back
+		Player->AddGold(BuildingsData->Buildings[Slot->TargetBuildingType].GoldCost);
+
+		//Unplan build
+		Slot->TargetBuildingType = BuildingType_None;
+	}
+	else if(HasCurrentBuilding && !HasTargetBuilding) //Mark for destruction
+	{
+		Slot->TargetBuildingType = BuildingType_None;
+	}
+	else if (HasCurrentBuilding && !HasPlannedBuilding) //Unmark for destruction
+	{
+		Slot->TargetBuildingType = Slot->CurrentBuildingType;
+	}
 }
+
+#pragma region Replication Funcs
+
+void APlanet::OnRep_BuildingSlots() const
+{
+	OnBuildingSlotsUpdated.Broadcast();
+}
+
+#pragma endregion
 
 int APlanet::GetGeneratedGoldAmount()
 {
@@ -107,7 +142,7 @@ int APlanet::GetGeneratedGoldAmount()
 	int FactoryAmount = 0;
 	for (FBuildingSlot BuildingSlot : BuildingSlots)
 	{
-		if(BuildingSlot.BuildingType == BuildingType_Factory)
+		if(BuildingSlot.CurrentBuildingType == BuildingType_Factory)
 			FactoryAmount++;
 	}
 

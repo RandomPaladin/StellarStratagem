@@ -210,7 +210,8 @@ void AGameManager::GoToNextRound()
 		PlayerEntry->Results.Add({RoundResolutionResultType_Resources, FString::Printf(TEXT("Your planets produced %d credits."), Kvp.Value)});
 	}
 	
-	//Build planned buildings
+	//Resolve building plans
+	//TODO
 
 	//Complete ship movement
 

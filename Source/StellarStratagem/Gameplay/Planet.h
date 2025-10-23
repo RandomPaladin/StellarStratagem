@@ -12,20 +12,22 @@ class UDataTable;
 class AGameManager;
 class UPlanetGradeData;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBuildingSlotsUpdatedDelegate);
+
 USTRUCT(BlueprintType)
 struct FBuildingSlot
 {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadOnly)
-	TEnumAsByte<EBuildingType> BuildingType;
-	UPROPERTY(BlueprintReadOnly)
-	bool MarkedForDestroy;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TEnumAsByte<EBuildingType> CurrentBuildingType = BuildingType_None;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TEnumAsByte<EBuildingType> TargetBuildingType = BuildingType_None;
 	
 	FBuildingSlot()
 	{
-		BuildingType = BuildingType_None;
-		MarkedForDestroy = false;
+		CurrentBuildingType = BuildingType_None;
+		TargetBuildingType = BuildingType_None;
 	}
 };
 
@@ -57,7 +59,7 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 	FString PlanetName;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	TEnumAsByte<EPlanetGrade> Grade;
-	UPROPERTY(VisibleAnywhere, Replicated)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_BuildingSlots)
 	TArray<FBuildingSlot> BuildingSlots;
 
 	//Art
@@ -67,6 +69,10 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 	UFUNCTION(NetMulticast, Reliable)
 	void Setup_Client(int MeshIndex);
 
+	//Replication funcs
+	UFUNCTION()
+	void OnRep_BuildingSlots() const;
+
 public:
 	APlanet();
 	virtual bool IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const override;
@@ -74,7 +80,7 @@ public:
 
 	void Setup(AGameManager* Game, int Index);
 	void SetOwningPlayer(const FPlayerData& NewOwningPlayer);
-	void Build(AStellarPlayerController* Player, const int BuildingSlotIndex, const EBuildingType BuildingType);
+	void UpdateBuilding(AStellarPlayerController* Player, const int BuildingSlotIndex, const EBuildingType TargetBuildingType);
 	int GetGeneratedGoldAmount();
 	float GenerateShips();
 
@@ -97,4 +103,8 @@ public:
 	UPlanetBuildingsData* GetBuildingsData() const { return BuildingsData; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FBuildingSlot GetBuildingSlot(const int BuildingSlotIndex) const { return BuildingSlots[BuildingSlotIndex]; }
+
+	//Delegates
+	UPROPERTY(BlueprintAssignable)
+	FOnBuildingSlotsUpdatedDelegate OnBuildingSlotsUpdated;
 };
