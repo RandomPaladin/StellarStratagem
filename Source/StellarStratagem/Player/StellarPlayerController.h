@@ -11,6 +11,7 @@ class USpringArmComponent;
 class AServerManager;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlanetSelectedDelegate, APlanet*, Planet);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMessageReceivedDelegate, FString, Message);
 
 USTRUCT(BlueprintType)
 struct FPlayerData
@@ -33,6 +34,11 @@ struct FPlayerData
 	bool operator ==(const FPlayerData& Other) const
 	{
 		return Username == Other.Username;
+	}
+
+	bool operator !=(const FPlayerData& Other) const
+	{
+		return Username != Other.Username;
 	}
 
 	bool IsValid() const { return !Username.IsEmpty(); }
@@ -81,10 +87,7 @@ protected:
 	APlanet* SelectedPlanet;
 
 private:
-	//Server RPCs
-	UFUNCTION(Server, Reliable)
-	void SendAction_Server(const FActionData& ActionData);
-
+	//Game setup
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void TryCreateGame_Server(const FString& GameCode);
 	UFUNCTION(BlueprintCallable, Server, Reliable)
@@ -94,6 +97,11 @@ private:
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void TryStartGame_Server();
 
+	//Actions
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void SendAction_Server(const FActionData& ActionData);
+	UFUNCTION(BlueprintCallable, Client, Reliable)
+	void ReceiveActionResult_Client(const FActionResult& ActionResult);
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void TryEndTurn_Server();
 	
@@ -102,7 +110,7 @@ private:
 	void CloseApplication();
 	UFUNCTION(BlueprintCallable)
 	void GoToMainMenu();
-	AGameManager* GetGameOnClient();
+	AGameManager* GetGameManager();
 	FVector ScreenToWorldLoc(const FVector& ScreenLoc) const;
 
 	//Input funcs
@@ -119,6 +127,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void AddGold(int Gold);
+	void RemoveGold(int Gold);
 
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -131,4 +140,7 @@ public:
 	//Delegates
 	UPROPERTY(BlueprintAssignable)
 	FOnPlanetSelectedDelegate OnPlanetSelected;
+	UPROPERTY(BlueprintAssignable)
+	FOnMessageReceivedDelegate OnMessageReceived;
+	
 };

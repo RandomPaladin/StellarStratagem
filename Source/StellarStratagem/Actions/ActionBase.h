@@ -1,27 +1,56 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ActionType.h"
+#include "BuildingType.h"
 #include "ActionBase.generated.h"
 
 class AGameManager;
-class APlayerPawn;
+class AStellarPlayerController;
 
 USTRUCT(BlueprintType)
 struct FActionData
 {
 	GENERATED_BODY()
 
-	UPROPERTY()
-	int NumberTest;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TEnumAsByte<EActionType> ActionType;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int Number;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int Number2;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TEnumAsByte<EBuildingType> BuildingType;
 
 	FActionData()
 	{
-		NumberTest = 0;
+		Number = 0;
+		Number2 = 0;
+		ActionType = ActionType_None;
+		BuildingType = BuildingType_None;
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FActionResult
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	bool Succeeded;
+	UPROPERTY()
+	FString Message;
+
+	FActionResult()
+	{
+		Succeeded = false;
+		Message = "";
 	}
 
-	FActionData(int InNumberTest)
+	FActionResult(bool InSucceeded, FString InMessage)
 	{
-		NumberTest = InNumberTest;
+		Succeeded = InSucceeded;
+		Message = InMessage;
 	}
 };
 
@@ -31,5 +60,6 @@ class STELLARSTRATAGEM_API UActionBase : public UObject
 	GENERATED_BODY()
 
 public:
-	virtual void PerformAction(AGameManager* Manager, APlayerPawn* Player) {};
+	FActionData Data;
+	virtual FActionResult PerformAction(AGameManager* GameManager, AStellarPlayerController* Player);
 };

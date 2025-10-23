@@ -1,7 +1,8 @@
 #include "StellarPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
-#include "StellarStratagem/Actions/ActionBase.h"
+#include "StellarStratagem/Actions/ActionType.h"
+#include "StellarStratagem/Actions/BuildAction.h"
 #include "StellarStratagem/Gameplay/GameManager.h"
 #include "StellarStratagem/Gameplay/Planet.h"
 #include "StellarStratagem/Gameplay/ServerManager.h"
@@ -29,10 +30,7 @@ void AStellarPlayerController::BeginPlay()
 	Super::BeginPlay();
 }
 
-void AStellarPlayerController::SendAction_Server_Implementation(const FActionData& ActionData)
-{
-	UE_LOG(LogTemp, Warning, TEXT("RECEIVED DATA %d"), ActionData.NumberTest)
-}
+#pragma region Game Creation / Joining
 
 void AStellarPlayerController::TryCreateGame_Server_Implementation(const FString& GameCode)
 {
@@ -55,31 +53,10 @@ void AStellarPlayerController::TryLeaveGame_Server_Implementation()
 
 void AStellarPlayerController::TryStartGame_Server_Implementation()
 {
-	//Get game and ensure game exists
-	AGameManager* CurrentGame = ServerManager->GetGame(CurrentGameCode);
-	if(!CurrentGame)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("GAME %s NOT FOUND"), *CurrentGameCode)
-		return;
-	}
-
-	//Start game
-	CurrentGame->StartGame();
+	GetGameManager()->StartGame();
 }
 
-void AStellarPlayerController::TryEndTurn_Server_Implementation()
-{
-	//Get game and ensure game exists
-	AGameManager* CurrentGame = ServerManager->GetGame(CurrentGameCode);
-	if(!CurrentGame)
-	{
-		UE_LOG(LogTemp, Error, TEXT("GAME %s NOT FOUND"), *CurrentGameCode)
-		return;
-	}
-
-	//End turn
-	CurrentGame->EndTurn(this);
-}
+#pragma endregion
 
 void AStellarPlayerController::CloseApplication()
 {
@@ -112,6 +89,66 @@ void AStellarPlayerController::AddGold(int Gold)
 	GoldAmount += Gold;
 }
 
+void AStellarPlayerController::RemoveGold(int Gold)
+{
+	//Ensure this is performed on the server
+	if(!HasAuthority())
+	{
+		UE_LOG(LogTemp, Error, TEXT("TRYING TO ADD GOLD OUTSIDE OF SERVER"))
+		return;
+	}
+
+	//Remove gold, don't go under 0
+	GoldAmount = FMath::Max(GoldAmount - Gold, 0);
+}
+
+#pragma endregion
+
+#pragma region Actions
+
+void AStellarPlayerController::SendAction_Server_Implementation(const FActionData& ActionData)
+{
+	//Find action's class type
+	UClass* ClassType;
+	switch (ActionData.ActionType)
+	{
+		case ActionType_None:
+			UE_LOG(LogTemp, Error, TEXT("GIVEN ACTION HAS NO TYPE"))
+			return;
+		case ActionType_Build:
+			ClassType = UBuildAction::StaticClass();
+			break;
+		case ActionType_EndTurn:
+			ClassType = UActionBase::StaticClass(); //TODO TURN INTO AN ACTION
+			break;
+		default:
+			UE_LOG(LogTemp, Error, TEXT("ACTION TYPE IS NOT BEING HANDLED"))
+			return;
+	}
+
+	//Create and perform action
+	UActionBase* Action = NewObject<UActionBase>(GetTransientPackage(), ClassType);
+	Action->Data = ActionData;
+	const FActionResult Result = Action->PerformAction(GetGameManager(), this);
+
+	//Send result to client
+	ReceiveActionResult_Client(Result);
+}
+
+void AStellarPlayerController::ReceiveActionResult_Client_Implementation(const FActionResult& ActionResult)
+{
+	if(ActionResult.Message.IsEmpty())
+		return;
+	
+	UE_LOG(LogTemp, Warning, TEXT("RESULT: %s"), *ActionResult.Message)
+	OnMessageReceived.Broadcast(ActionResult.Message);
+}
+
+void AStellarPlayerController::TryEndTurn_Server_Implementation()
+{
+	GetGameManager()->EndTurn(this);
+}
+
 #pragma endregion
 
 #pragma region Input
@@ -140,15 +177,12 @@ void AStellarPlayerController::OnPressReleased(const FVector& Loc)
 {
 	//TODO ONLY SELECT IF DIDN'T DRAG OUT OF PLANET
 	
-	//Get game
-	AGameManager* Game = GetGameOnClient();
-
 	//Find world loc
 	FVector WorldLoc = ScreenToWorldLoc(Loc);
 
 	//Find a planet that's close enough to select
 	APlanet* PlanetToSelect = nullptr;
-	for (APlanet* Planet : Game->GetPlanets())
+	for (APlanet* Planet : GetGameManager()->GetPlanets())
 	{
 		float SqrDist = FVector::DistSquared(Planet->GetActorLocation(), WorldLoc);
 		if(SqrDist > PlanetSelectRadiusSqr)
@@ -171,10 +205,15 @@ void AStellarPlayerController::OnPressReleased(const FVector& Loc)
 
 #pragma region Helpers
 
-AGameManager* AStellarPlayerController::GetGameOnClient()
+AGameManager* AStellarPlayerController::GetGameManager()
 {
 	if(!GameManager)
-		GameManager = Cast<AGameManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AGameManager::StaticClass()));
+	{
+		if(HasAuthority())
+			GameManager = ServerManager->GetGame(CurrentGameCode);
+		else
+			GameManager = Cast<AGameManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AGameManager::StaticClass()));
+	}
 
 	return GameManager;
 }
@@ -194,7 +233,7 @@ APlanet* AStellarPlayerController::GetSelectedPlanet()
 {
 	//If no planet selected, find one that is owned by self
 	if(!SelectedPlanet)
-		SelectedPlanet = *GetGameOnClient()->GetPlanets().FindByPredicate([this](APlanet* Planet){ return Planet->IsOwnedByPlayer(PlayerData); });
+		SelectedPlanet = *GetGameManager()->GetPlanets().FindByPredicate([this](const APlanet* Planet){ return Planet->IsOwnedByPlayer(PlayerData); });
 
 	return SelectedPlanet;
 }
