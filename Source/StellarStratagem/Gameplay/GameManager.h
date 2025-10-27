@@ -3,13 +3,13 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "StellarStratagem/Player/StellarPlayerController.h"
+#include "StellarStratagem/Utility/HelperFunctions.h"
 #include "GameManager.generated.h"
 
 class APlanet;
 class AServerManager;
 class AStellarPlayerController;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FNoParamDelegate);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameStateChanged, bool, Started);
 
 UENUM(BlueprintType)

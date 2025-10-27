@@ -6,14 +6,13 @@
 #include "StellarStratagem/Actions/BuildingType.h"
 #include "StellarStratagem/Data/PlanetGradeData.h"
 #include "StellarStratagem/Player/StellarPlayerController.h"
+#include "StellarStratagem/Utility/HelperFunctions.h"
 #include "Planet.generated.h"
 
 class UPlanetBuildingsData;
 class UDataTable;
 class AGameManager;
 class UPlanetGradeData;
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBuildingSlotsUpdatedDelegate);
 
 USTRUCT(BlueprintType)
 struct FBuildingSlot
@@ -115,5 +114,5 @@ public:
 
 	//Delegates
 	UPROPERTY(BlueprintAssignable)
-	FOnBuildingSlotsUpdatedDelegate OnBuildingSlotsUpdated;
+	FNoParamDelegate OnBuildingSlotsUpdated;
 };
