@@ -4,6 +4,7 @@
 #include "StellarStratagem/Actions/ActionType.h"
 #include "StellarStratagem/Actions/BuildAction.h"
 #include "StellarStratagem/Actions/EndTurnAction.h"
+#include "StellarStratagem/Actions/ProductionDistributionUpdateAction.h"
 #include "StellarStratagem/Gameplay/GameManager.h"
 #include "StellarStratagem/Gameplay/Planet.h"
 #include "StellarStratagem/Gameplay/ServerManager.h"
@@ -136,6 +137,9 @@ void AStellarPlayerController::SendAction_Server_Implementation(const FActionDat
 			break;
 		case ActionType_EndTurn:
 			ClassType = UEndTurnAction::StaticClass();
+			break;
+		case ActionType_ProductionDistributionUpdate:
+			ClassType = UProductionDistributionUpdateAction::StaticClass();
 			break;
 		default:
 			UE_LOG(LogTemp, Error, TEXT("ACTION TYPE IS NOT BEING HANDLED"))

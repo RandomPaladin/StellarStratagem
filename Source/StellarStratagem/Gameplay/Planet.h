@@ -61,6 +61,8 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 	TEnumAsByte<EPlanetGrade> Grade;
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_BuildingSlots)
 	TArray<FBuildingSlot> BuildingSlots;
+	UPROPERTY(VisibleAnywhere, Replicated)
+	float ProductionDistribution = 0.5f;
 
 	//Art
 	UPROPERTY(EditAnywhere)
@@ -81,6 +83,8 @@ public:
 	void Setup(AGameManager* Game, int Index);
 	void SetOwningPlayer(const FPlayerData& NewOwningPlayer);
 	void UpdateBuilding(AStellarPlayerController* Player, const int BuildingSlotIndex, const EBuildingType TargetBuildingType);
+	void UpdateProductionDistribution(float NewDistribution);
+	
 	int GetGeneratedGoldAmount();
 	float GenerateShips();
 	void ResolveBuildingPlans(OUT TArray<TTuple<bool, EBuildingType>>& Results); //bool: If building was built or destroyed, BuildingType: Building type that was built or destroyed

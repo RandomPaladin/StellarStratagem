@@ -247,6 +247,8 @@ void AGameManager::GoToNextRound()
 	//Complete ship movement
 
 	//Resolve combat
+
+	//Send result to clients
 }
 
 void AGameManager::RegisterPlanet(APlanet* Planet)

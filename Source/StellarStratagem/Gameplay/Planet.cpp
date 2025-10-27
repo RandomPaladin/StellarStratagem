@@ -120,7 +120,11 @@ void APlanet::UpdateBuilding(AStellarPlayerController* Player, const int Buildin
 		Slot->TargetBuildingType = BuildingType_None;
 	else if (HasCurrentBuilding && !HasPlannedBuilding) //Unmark for destruction
 		Slot->TargetBuildingType = Slot->CurrentBuildingType;
-	}
+}
+
+void APlanet::UpdateProductionDistribution(const float NewDistribution)
+{
+	ProductionDistribution = NewDistribution;
 }
 
 #pragma region Replication Funcs
@@ -142,8 +146,13 @@ int APlanet::GetGeneratedGoldAmount()
 			FactoryAmount++;
 	}
 
-	//Multiply with gold per factory from grades data
-	return FactoryAmount * GradesData->Grades[Grade].GoldPerFactoryPerRound;
+	//Multiply with gold per factory from grades data to get gold amount
+	int GoldAmount = FactoryAmount * GradesData->Grades[Grade].GoldPerFactoryPerRound;
+
+	//Apply production distribution
+	GoldAmount *= ProductionDistribution;
+	
+	return GoldAmount;
 }
 
 float APlanet::GenerateShips()
