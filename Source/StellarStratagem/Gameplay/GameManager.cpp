@@ -216,6 +216,9 @@ void AGameManager::GoToNextRound()
 	//Add entries for gold generation
 	for (TTuple<FPlayerData, int> Kvp : GeneratedGold)
 	{
+		//Ignore if no gold was generated
+		if(Kvp.Value <= 0)
+			continue;
 		
 		const int OwningPlayerEntryIndex = GetIndexOfPlayersResolutionResults(Kvp.Key);
 		PlayersResolutionResults[OwningPlayerEntryIndex].Results.Add({RoundResolutionResultType_Resources, FString::Printf(TEXT("Your planets produced %d credits."), Kvp.Value)});
