@@ -63,7 +63,7 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 	TArray<FBuildingSlot> BuildingSlots;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	float ProductionDistribution = 0.5f;
-	UPROPERTY(VisibleAnywhere, Replicated)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_ShipAmount)
 	float ShipAmount = 0.f;
 
 	//Art
@@ -76,6 +76,8 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 	//Replication funcs
 	UFUNCTION()
 	void OnRep_BuildingSlots() const;
+	UFUNCTION()
+	void OnRep_ShipAmount() const;
 
 public:
 	APlanet();
@@ -96,11 +98,13 @@ public:
 	AGameManager* GetGameManager() const { return GameManager; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int GetPlanetIndex() const { return PlanetIndex; }
+	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsOwnedByPlayer(const FPlayerData& PlayerData) const { return OwningPlayer == PlayerData; }
 	bool IsOwnedByAnyPlayer() const { return OwningPlayer.IsValid(); }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FPlayerData GetOwningPlayer() const { return OwningPlayer; }
+	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	TEnumAsByte<EPlanetGrade> GetGrade() const { return Grade; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -111,8 +115,12 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FBuildingSlot GetBuildingSlot(const int BuildingSlotIndex) const { return BuildingSlots[BuildingSlotIndex]; }
 	int GetFactoryAmount() const { return Algo::CountIf(BuildingSlots, [](const FBuildingSlot& BuildingSlot){ return BuildingSlot.CurrentBuildingType == BuildingType_Factory; }); }
-
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	float GetShipAmount() const { return ShipAmount; }
+	
 	//Delegates
 	UPROPERTY(BlueprintAssignable)
 	FNoParamDelegate OnBuildingSlotsUpdated;
+	UPROPERTY(BlueprintAssignable)
+	FNoParamDelegate OnShipAmountUpdated;
 };

@@ -135,6 +135,11 @@ void APlanet::OnRep_BuildingSlots() const
 	OnBuildingSlotsUpdated.Broadcast();
 }
 
+void APlanet::OnRep_ShipAmount() const
+{
+	OnShipAmountUpdated.Broadcast();
+}
+
 #pragma endregion
 
 int APlanet::GetGeneratedGoldAmount() const
