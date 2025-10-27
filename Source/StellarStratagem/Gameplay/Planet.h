@@ -83,6 +83,7 @@ public:
 	void UpdateBuilding(AStellarPlayerController* Player, const int BuildingSlotIndex, const EBuildingType TargetBuildingType);
 	int GetGeneratedGoldAmount();
 	float GenerateShips();
+	void ResolveBuildingPlans(OUT TArray<TTuple<bool, EBuildingType>>& Results); //bool: If building was built or destroyed, BuildingType: Building type that was built or destroyed
 
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)

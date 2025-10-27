@@ -34,6 +34,7 @@ void APlanet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	DOREPLIFETIME(APlanet, PlanetName);
 	DOREPLIFETIME(APlanet, Grade);
 	DOREPLIFETIME(APlanet, BuildingSlots);
+	DOREPLIFETIME(APlanet, ProductionDistribution);
 }
 
 void APlanet::Setup(AGameManager* Game, const int Index)
@@ -64,8 +65,6 @@ void APlanet::Setup(AGameManager* Game, const int Index)
 	const int SlotAmount = GradesData->GenerateRandomBuildingSlotAmount(Grade);
 	for(int i = 0; i < SlotAmount; i++)
 		BuildingSlots.Add({});
-
-	UE_LOG(LogTemp, Warning, TEXT("SETUP PLANET"))
 
 	//Setup on clients
 	Setup_Client(FMath::RandRange(0, PlanetMeshes.Num() - 1));
@@ -118,11 +117,8 @@ void APlanet::UpdateBuilding(AStellarPlayerController* Player, const int Buildin
 		Slot->TargetBuildingType = BuildingType_None;
 	}
 	else if(HasCurrentBuilding && !HasTargetBuilding) //Mark for destruction
-	{
 		Slot->TargetBuildingType = BuildingType_None;
-	}
 	else if (HasCurrentBuilding && !HasPlannedBuilding) //Unmark for destruction
-	{
 		Slot->TargetBuildingType = Slot->CurrentBuildingType;
 	}
 }
@@ -153,4 +149,26 @@ int APlanet::GetGeneratedGoldAmount()
 float APlanet::GenerateShips()
 {
 	return 0.f; //TODO
+}
+
+void APlanet::ResolveBuildingPlans(TArray<TTuple<bool, EBuildingType>>& Results)
+{
+	//Ensure given results array is empty
+	Results.Empty();
+	
+	//Resolve
+	for (FBuildingSlot& BuildingSlot : BuildingSlots)
+	{
+		//No plans set, ignore this slot
+		if(BuildingSlot.CurrentBuildingType == BuildingSlot.TargetBuildingType)
+			continue;
+
+		//Resolve plan
+		auto PreviousBuildingType = BuildingSlot.CurrentBuildingType;
+		BuildingSlot.CurrentBuildingType = BuildingSlot.TargetBuildingType;
+
+		//Add result to array
+		bool Built = BuildingSlot.CurrentBuildingType != BuildingType_None;
+		Results.Add(TTuple<bool, EBuildingType>{Built, Built ? BuildingSlot.CurrentBuildingType : PreviousBuildingType});
+	}
 }

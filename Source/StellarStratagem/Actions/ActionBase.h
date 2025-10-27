@@ -16,16 +16,19 @@ struct FActionData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TEnumAsByte<EActionType> ActionType;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int Number;
+	int IntValue;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int Number2;
+	int IntValue2;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float NumberValue;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TEnumAsByte<EBuildingType> BuildingType;
 
 	FActionData()
 	{
-		Number = 0;
-		Number2 = 0;
+		IntValue = 0;
+		IntValue2 = 0;
+		NumberValue = 0.f;
 		ActionType = ActionType_None;
 		BuildingType = BuildingType_None;
 	}

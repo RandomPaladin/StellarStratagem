@@ -206,12 +206,43 @@ void AGameManager::GoToNextRound()
 	//Add entries for gold production
 	for (TTuple<FPlayerData, int> Kvp : GeneratedGold)
 	{
-		FRoundResolutionResults* PlayerEntry = PlayersResolutionResults.FindByPredicate([Kvp](const FRoundResolutionResults& Results) { return Results.Player == Kvp.Key; });
-		PlayerEntry->Results.Add({RoundResolutionResultType_Resources, FString::Printf(TEXT("Your planets produced %d credits."), Kvp.Value)});
+		const int OwningPlayerEntryIndex = PlayersResolutionResults.IndexOfByPredicate([Kvp](const FRoundResolutionResults& Results) { return Results.Player == Kvp.Key; });
+		PlayersResolutionResults[OwningPlayerEntryIndex].Results.Add({RoundResolutionResultType_Resources, FString::Printf(TEXT("Your planets produced %d credits."), Kvp.Value)});
 	}
 	
 	//Resolve building plans
-	//TODO
+	for (APlanet* Planet : Planets)
+	{
+		//Ignore unowned planets
+		if(!Planet->IsOwnedByAnyPlayer())
+			continue;
+
+		//Resolve
+		TArray<TTuple<bool, EBuildingType>> ResolveBuildingPlansResults;
+		Planet->ResolveBuildingPlans(ResolveBuildingPlansResults);
+
+		//Add entry to results
+		const int OwningPlayerEntryIndex = PlayersResolutionResults.IndexOfByPredicate([Planet](const FRoundResolutionResults& Results) { return Results.Player == Planet->GetOwningPlayer(); });
+		for (const TTuple<bool, EBuildingType>& Result : ResolveBuildingPlansResults)
+		{
+			FString BuildingTypeString;
+			switch (Result.Value)
+			{
+				case BuildingType_None:
+					BuildingTypeString = "UNDEFINED";
+					break;
+				case BuildingType_Factory:
+					BuildingTypeString = "Factory";
+					break;
+				case BuildingType_Research:
+					BuildingTypeString = "Research building";
+					break;
+			}
+			FString BuildingResultString = Result.Key ? "built" : "destroyed";
+			FString ResultString = FString::Printf(TEXT("%s was %s on planet %s."), *BuildingTypeString, *BuildingResultString, *Planet->GetPlanetName());
+			PlayersResolutionResults[OwningPlayerEntryIndex].Results.Add({RoundResolutionResultType_Resources, ResultString});
+		}
+	}
 
 	//Complete ship movement
 

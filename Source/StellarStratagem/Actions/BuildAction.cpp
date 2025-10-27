@@ -5,8 +5,8 @@
 
 FActionResult UBuildAction::PerformAction(AGameManager* GameManager, AStellarPlayerController* Player)
 {
-	APlanet* Planet = GameManager->GetPlanets()[Data.Number];
-	const int BuildingSlotIndex = Data.Number2;
+	APlanet* Planet = GameManager->GetPlanets()[Data.IntValue];
+	const int BuildingSlotIndex = Data.IntValue2;
 
 	//Ensure this is only done on the server
 	if(!Planet->HasAuthority())
@@ -46,7 +46,8 @@ FActionResult UBuildAction::PerformAction(AGameManager* GameManager, AStellarPla
 			return {false, FString::Printf(TEXT("You need %d credits to build this."), GoldCost)};
 		}
 	}
-	
+
+	//Update building
 	Planet->UpdateBuilding(Player, BuildingSlotIndex, Data.BuildingType);
 	return {true, ""};
 }
