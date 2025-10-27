@@ -35,6 +35,7 @@ void APlanet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	DOREPLIFETIME(APlanet, Grade);
 	DOREPLIFETIME(APlanet, BuildingSlots);
 	DOREPLIFETIME(APlanet, ProductionDistribution);
+	DOREPLIFETIME(APlanet, ShipAmount);
 }
 
 void APlanet::Setup(AGameManager* Game, const int Index)
@@ -136,18 +137,10 @@ void APlanet::OnRep_BuildingSlots() const
 
 #pragma endregion
 
-int APlanet::GetGeneratedGoldAmount()
+int APlanet::GetGeneratedGoldAmount() const
 {
-	//Find factory amount
-	int FactoryAmount = 0;
-	for (FBuildingSlot BuildingSlot : BuildingSlots)
-	{
-		if(BuildingSlot.CurrentBuildingType == BuildingType_Factory)
-			FactoryAmount++;
-	}
-
 	//Multiply with gold per factory from grades data to get gold amount
-	int GoldAmount = FactoryAmount * GradesData->Grades[Grade].GoldPerFactoryPerRound;
+	int GoldAmount = GetFactoryAmount() * GradesData->Grades[Grade].GoldPerFactoryPerRound;
 
 	//Apply production distribution
 	GoldAmount *= ProductionDistribution;
@@ -157,7 +150,16 @@ int APlanet::GetGeneratedGoldAmount()
 
 float APlanet::GenerateShips()
 {
-	return 0.f; //TODO
+	//Multiply with ships per factory from grades data to get ship amount
+	float GeneratedShipAmount = (float)GetFactoryAmount() * GradesData->Grades[Grade].ShipsPerFactoryPerRound;
+	
+	//Apply production distribution
+	GeneratedShipAmount *= 1.f - ProductionDistribution;
+
+	//Update ship amount
+	ShipAmount += GeneratedShipAmount;
+	
+	return GeneratedShipAmount;
 }
 
 void APlanet::ResolveBuildingPlans(TArray<TTuple<bool, EBuildingType>>& Results)

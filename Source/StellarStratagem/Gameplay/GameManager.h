@@ -142,6 +142,7 @@ public:
 	bool GetGameStarted() const { return GameStarted; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsPlayerPartOfGame(const FPlayerData& Player) const { return AllPlayers.FindByPredicate([Player](const FPlayerData& PlayerItem){ return PlayerItem == Player; }) != nullptr; }
+	int GetIndexOfPlayersResolutionResults(const FPlayerData& Player) const { return PlayersResolutionResults.IndexOfByPredicate([Player](const FRoundResolutionResults& Results) { return Results.Player == Player; }); };
 
 	TArray<APlanet*> GetPlanets() const { return Planets; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)

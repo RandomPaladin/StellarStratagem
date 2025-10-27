@@ -201,12 +201,23 @@ void AGameManager::GoToNextRound()
 			GeneratedGold[OwningPlayer] += GoldAmount;
 		else
 			GeneratedGold.Add(OwningPlayer, GoldAmount);
+
+		//Generate ships
+		const float ShipsGenerated = Planet->GenerateShips();
+		
+		//Add entries for ship generation
+		if(ShipsGenerated > 0.f)
+		{
+			const int OwningPlayerEntryIndex = GetIndexOfPlayersResolutionResults(Planet->GetOwningPlayer());
+			PlayersResolutionResults[OwningPlayerEntryIndex].Results.Add({RoundResolutionResultType_Resources, FString::Printf(TEXT("%.1f ships were produced on %s."), ShipsGenerated, *Planet->GetPlanetName())});
+		}
 	}
 
-	//Add entries for gold production
+	//Add entries for gold generation
 	for (TTuple<FPlayerData, int> Kvp : GeneratedGold)
 	{
-		const int OwningPlayerEntryIndex = PlayersResolutionResults.IndexOfByPredicate([Kvp](const FRoundResolutionResults& Results) { return Results.Player == Kvp.Key; });
+		
+		const int OwningPlayerEntryIndex = GetIndexOfPlayersResolutionResults(Kvp.Key);
 		PlayersResolutionResults[OwningPlayerEntryIndex].Results.Add({RoundResolutionResultType_Resources, FString::Printf(TEXT("Your planets produced %d credits."), Kvp.Value)});
 	}
 	
@@ -222,7 +233,7 @@ void AGameManager::GoToNextRound()
 		Planet->ResolveBuildingPlans(ResolveBuildingPlansResults);
 
 		//Add entry to results
-		const int OwningPlayerEntryIndex = PlayersResolutionResults.IndexOfByPredicate([Planet](const FRoundResolutionResults& Results) { return Results.Player == Planet->GetOwningPlayer(); });
+		const int OwningPlayerEntryIndex = GetIndexOfPlayersResolutionResults(Planet->GetOwningPlayer());
 		for (const TTuple<bool, EBuildingType>& Result : ResolveBuildingPlansResults)
 		{
 			FString BuildingTypeString;

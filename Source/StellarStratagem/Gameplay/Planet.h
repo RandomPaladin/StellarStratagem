@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Algo/Count.h"
 #include "GameFramework/Actor.h"
 #include "StellarStratagem/Actions/BuildingType.h"
 #include "StellarStratagem/Data/PlanetGradeData.h"
@@ -63,6 +64,8 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 	TArray<FBuildingSlot> BuildingSlots;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	float ProductionDistribution = 0.5f;
+	UPROPERTY(VisibleAnywhere, Replicated)
+	float ShipAmount = 0.f;
 
 	//Art
 	UPROPERTY(EditAnywhere)
@@ -85,7 +88,7 @@ public:
 	void UpdateBuilding(AStellarPlayerController* Player, const int BuildingSlotIndex, const EBuildingType TargetBuildingType);
 	void UpdateProductionDistribution(float NewDistribution);
 	
-	int GetGeneratedGoldAmount();
+	int GetGeneratedGoldAmount() const;
 	float GenerateShips();
 	void ResolveBuildingPlans(OUT TArray<TTuple<bool, EBuildingType>>& Results); //bool: If building was built or destroyed, BuildingType: Building type that was built or destroyed
 
@@ -108,6 +111,7 @@ public:
 	UPlanetBuildingsData* GetBuildingsData() const { return BuildingsData; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FBuildingSlot GetBuildingSlot(const int BuildingSlotIndex) const { return BuildingSlots[BuildingSlotIndex]; }
+	int GetFactoryAmount() const { return Algo::CountIf(BuildingSlots, [](const FBuildingSlot& BuildingSlot){ return BuildingSlot.CurrentBuildingType == BuildingType_Factory; }); }
 
 	//Delegates
 	UPROPERTY(BlueprintAssignable)
