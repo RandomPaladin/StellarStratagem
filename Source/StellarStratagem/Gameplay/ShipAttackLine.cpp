@@ -21,9 +21,10 @@ void AShipAttackLine::SetTargetLoc(const FVector& Loc) const
 	StaticMeshComp->SetRelativeScale3D({Dist, 1.f, 1.f});
 }
 
-void AShipAttackLine::SetTargetPlanet(const APlanet* Planet)
+void AShipAttackLine::SetupAttackLine(AStellarPlayerController* InPlayer, APlanet* InFromPlanet, APlanet* InTargetPlanet)
 {
-	SetTargetLoc(Planet->GetActorLocation());
-
-	//TODO
+	Player = InPlayer;
+	FromPlanet = InFromPlanet;
+	TargetPlanet = InTargetPlanet;
+	SetTargetLoc(TargetPlanet->GetActorLocation());
 }

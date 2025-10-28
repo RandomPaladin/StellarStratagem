@@ -94,7 +94,7 @@ void AStellarPlayerController::GoToMainMenu()
 
 #pragma region Gameplay
 
-void AStellarPlayerController::AddGold(int Gold)
+void AStellarPlayerController::AddGold(const int Gold)
 {
 	//Ensure this is performed on the server
 	if(!HasAuthority())
@@ -107,7 +107,7 @@ void AStellarPlayerController::AddGold(int Gold)
 	GoldAmount += Gold;
 }
 
-void AStellarPlayerController::RemoveGold(int Gold)
+void AStellarPlayerController::RemoveGold(const int Gold)
 {
 	//Ensure this is performed on the server
 	if(!HasAuthority())
@@ -176,11 +176,7 @@ void AStellarPlayerController::OnPress(const FVector& Loc)
 	PreviousTouchLoc = StartTouchLoc;
 	CurrentTouchLoc = StartTouchLoc;
 	DraggingFromPlanet = false;
-
-	//Find world loc
-	const FVector WorldLoc = ScreenToWorldLoc(Loc);
-
-	//Find initially pressed planet
+	CurrentShipAttackLine = nullptr;
 	InitiallyPressedPlanet = GetHoveredPlanet(Loc);
 }
 
@@ -208,8 +204,8 @@ void AStellarPlayerController::OnPressMoved(const FVector& Loc)
 			{
 				DraggingFromPlanet = true;
 				
-				//Create attack line if dragging from owned planet
-				if(InitiallyPressedPlanet->IsOwnedByPlayer(PlayerData))
+				//Create attack line if dragging from owned planet with enough ships
+				if(InitiallyPressedPlanet->IsOwnedByPlayer(PlayerData) && InitiallyPressedPlanet->GetShipAmount() >= 1.f)
 				{
 					AShipAttackLine* AttackLine = GetWorld()->SpawnActor<AShipAttackLine>(ShipAttackLineTemplate, InitiallyPressedPlanet->GetActorLocation(), FRotator::ZeroRotator);;
 					CurrentShipAttackLine = AttackLine;
@@ -219,7 +215,7 @@ void AStellarPlayerController::OnPressMoved(const FVector& Loc)
 		}
 		
 		//Set attack line target loc
-		if(DraggingFromPlanet && InitiallyPressedPlanet->IsOwnedByPlayer(PlayerData))
+		if(DraggingFromPlanet && CurrentShipAttackLine)
 			CurrentShipAttackLine->SetTargetLoc(TouchWorldLoc);
 	}
 	else //Update camera loc if not dragging from a planet
@@ -238,12 +234,16 @@ void AStellarPlayerController::OnPressReleased(const FVector& Loc)
 	//Update ship attack target if dragged from owned planet
 	if(DraggingFromPlanet)
 	{
-		if(InitiallyPressedPlanet->IsOwnedByPlayer(PlayerData))
+		//Setup attack line
+		if(CurrentShipAttackLine)
 		{
-			const APlanet* ReleasedOnPlanet = GetHoveredPlanet(Loc);
-			if(ReleasedOnPlanet)
-				CurrentShipAttackLine->SetTargetPlanet(ReleasedOnPlanet);
-			else //Destroy attack line if not released on a planet
+			APlanet* ReleasedOnPlanet = GetHoveredPlanet(Loc);
+			if(ReleasedOnPlanet && !ReleasedOnPlanet->IsOwnedByPlayer(PlayerData))
+			{
+				CurrentShipAttackLine->SetupAttackLine(this, InitiallyPressedPlanet, ReleasedOnPlanet);
+				OnShipAttackLineCreated.Broadcast(CurrentShipAttackLine);
+			}
+			else //Destroy attack line if not released on an enemy planet
 			{
 				ShipAttackLines.Remove(CurrentShipAttackLine);
 				CurrentShipAttackLine->Destroy();
@@ -258,7 +258,6 @@ void AStellarPlayerController::OnPressReleased(const FVector& Loc)
 		SelectedPlanet = InitiallyPressedPlanet;
 		OnPlanetSelected.Broadcast(SelectedPlanet);
 	}
-
 }
 
 #pragma endregion

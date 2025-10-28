@@ -14,6 +14,7 @@ class AServerManager;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlanetSelectedDelegate, APlanet*, Planet);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMessageReceivedDelegate, FString, Message);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGoldUpdatedDelegate, int, NewGoldAmount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnShipAttackLineCreatedDelegate, AShipAttackLine*, ShipAttackLine);
 
 USTRUCT(BlueprintType)
 struct FPlayerData
@@ -167,4 +168,6 @@ public:
 	FOnMessageReceivedDelegate OnMessageReceived;
 	UPROPERTY(BlueprintAssignable)
 	FOnGoldUpdatedDelegate OnGoldUpdated;
+	UPROPERTY(BlueprintAssignable)
+	FOnShipAttackLineCreatedDelegate OnShipAttackLineCreated;
 };
