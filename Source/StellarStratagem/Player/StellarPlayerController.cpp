@@ -8,6 +8,7 @@
 #include "StellarStratagem/Gameplay/GameManager.h"
 #include "StellarStratagem/Gameplay/Planet.h"
 #include "StellarStratagem/Gameplay/ServerManager.h"
+#include "StellarStratagem/Gameplay/ShipAttackLine.h"
 
 void AStellarPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -179,17 +180,8 @@ void AStellarPlayerController::OnPress(const FVector& Loc)
 	//Find world loc
 	const FVector WorldLoc = ScreenToWorldLoc(Loc);
 
-	//Find a planet that's close enough to select
-	InitiallyPressedPlanet = nullptr;
-	for (APlanet* Planet : GetGameManager()->GetPlanets())
-	{
-		const float SqrDist = FVector::DistSquared(Planet->GetActorLocation(), WorldLoc);
-		if(SqrDist > PlanetSelectRadiusSqr)
-			continue;
-
-		InitiallyPressedPlanet = Planet;
-		break;
-	}
+	//Find initially pressed planet
+	InitiallyPressedPlanet = GetHoveredPlanet(Loc);
 }
 
 void AStellarPlayerController::OnPressMoved(const FVector& Loc)
@@ -208,17 +200,27 @@ void AStellarPlayerController::OnPressMoved(const FVector& Loc)
 		const FVector PlanetLoc = InitiallyPressedPlanet->GetActorLocation();
 		const FVector TouchWorldLoc = ScreenToWorldLoc(Loc);
 
-		//Check if dragged away from planet
+		//Check if dragged away from owned planet
 		if(!DraggingFromPlanet)
 		{
 			const float SqrDist = FVector::DistSquared(PlanetLoc, TouchWorldLoc);
 			if(SqrDist > PlanetSelectRadiusSqr)
+			{
 				DraggingFromPlanet = true;
+				
+				//Create attack line if dragging from owned planet
+				if(InitiallyPressedPlanet->IsOwnedByPlayer(PlayerData))
+				{
+					AShipAttackLine* AttackLine = GetWorld()->SpawnActor<AShipAttackLine>(ShipAttackLineTemplate, InitiallyPressedPlanet->GetActorLocation(), FRotator::ZeroRotator);;
+					CurrentShipAttackLine = AttackLine;
+					ShipAttackLines.Add(AttackLine);
+				}
+			}
 		}
-
-		//Call delegate
-		if(DraggingFromPlanet)
-			OnDraggingFromPlanet.Broadcast(PlanetLoc, TouchWorldLoc);
+		
+		//Set attack line target loc
+		if(DraggingFromPlanet && InitiallyPressedPlanet->IsOwnedByPlayer(PlayerData))
+			CurrentShipAttackLine->SetTargetLoc(TouchWorldLoc);
 	}
 	else //Update camera loc if not dragging from a planet
 		CamActor->SetActorLocation(CamActor->GetActorLocation() + ScreenToWorldDelta(PreviousTouchLoc - CurrentTouchLoc));
@@ -229,17 +231,34 @@ void AStellarPlayerController::OnPressMoved(const FVector& Loc)
 
 void AStellarPlayerController::OnPressReleased(const FVector& Loc)
 {
-	//No selectable planet
+	//No initial planet
 	if(!InitiallyPressedPlanet)
 		return;
 
-	//Don't select planet if dragged out from it
+	//Update ship attack target if dragged from owned planet
 	if(DraggingFromPlanet)
-		return;
+	{
+		if(InitiallyPressedPlanet->IsOwnedByPlayer(PlayerData))
+		{
+			const APlanet* ReleasedOnPlanet = GetHoveredPlanet(Loc);
+			if(ReleasedOnPlanet)
+				CurrentShipAttackLine->SetTargetPlanet(ReleasedOnPlanet);
+			else //Destroy attack line if not released on a planet
+			{
+				ShipAttackLines.Remove(CurrentShipAttackLine);
+				CurrentShipAttackLine->Destroy();
+			}
 
-	//Select planet
-	SelectedPlanet = InitiallyPressedPlanet;
-	OnPlanetSelected.Broadcast(SelectedPlanet);
+			CurrentShipAttackLine = nullptr;
+		}
+	}
+	else //Select planet if didn't drag from it
+	{
+		//Select planet
+		SelectedPlanet = InitiallyPressedPlanet;
+		OnPlanetSelected.Broadcast(SelectedPlanet);
+	}
+
 }
 
 #pragma endregion
@@ -275,6 +294,21 @@ FVector AStellarPlayerController::ScreenToWorldDelta(const FVector& ScreenDelta)
 	const FVector StartWorldLoc = ScreenToWorldLoc({0, 0, 0});
 	const FVector EndWorldLoc = ScreenToWorldLoc(ScreenDelta);
 	return EndWorldLoc - StartWorldLoc;
+}
+
+APlanet* AStellarPlayerController::GetHoveredPlanet(const FVector& ScreenLoc)
+{
+	const FVector WorldLoc = ScreenToWorldLoc(ScreenLoc);
+	for (APlanet* Planet : GetGameManager()->GetPlanets())
+	{
+		const float SqrDist = FVector::DistSquared(Planet->GetActorLocation(), WorldLoc);
+		if(SqrDist > PlanetSelectRadiusSqr)
+			continue;
+
+		return Planet;
+	}
+
+	return nullptr;
 }
 
 APlanet* AStellarPlayerController::GetSelectedPlanet()

@@ -5,6 +5,7 @@
 #include "StellarStratagem/Actions/ActionBase.h"
 #include "StellarPlayerController.generated.h"
 
+class AShipAttackLine;
 class APlanet;
 class AGameManager;
 class USpringArmComponent;
@@ -13,7 +14,6 @@ class AServerManager;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlanetSelectedDelegate, APlanet*, Planet);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMessageReceivedDelegate, FString, Message);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGoldUpdatedDelegate, int, NewGoldAmount);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDraggingFromPlanetDelegate, FVector, StartLoc, FVector, EndLoc);
 
 USTRUCT(BlueprintType)
 struct FPlayerData
@@ -98,6 +98,13 @@ protected:
 	UPROPERTY()
 	APlanet* SelectedPlanet;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AShipAttackLine> ShipAttackLineTemplate;
+	UPROPERTY(VisibleAnywhere)
+	AShipAttackLine* CurrentShipAttackLine;
+	UPROPERTY(VisibleAnywhere)
+	TArray<AShipAttackLine*> ShipAttackLines;
+
 private:
 	//Replication funcs
 	UFUNCTION()
@@ -127,6 +134,7 @@ private:
 	AGameManager* GetGameManager();
 	FVector ScreenToWorldLoc(const FVector& ScreenLoc) const;
 	FVector ScreenToWorldDelta(const FVector& ScreenDelta) const;
+	APlanet* GetHoveredPlanet(const FVector& ScreenLoc);
 
 	//Input funcs
 	UFUNCTION(BlueprintCallable)
@@ -159,6 +167,4 @@ public:
 	FOnMessageReceivedDelegate OnMessageReceived;
 	UPROPERTY(BlueprintAssignable)
 	FOnGoldUpdatedDelegate OnGoldUpdated;
-	UPROPERTY(BlueprintAssignable)
-	FOnDraggingFromPlanetDelegate OnDraggingFromPlanet;
 };
