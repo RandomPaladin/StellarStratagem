@@ -170,8 +170,25 @@ void AStellarPlayerController::ReceiveActionResult_Client_Implementation(const F
 
 void AStellarPlayerController::OnPress(const FVector& Loc)
 {
+	//Initial values
 	StartTouchLoc = Loc;
 	StartCamLoc = CamActor->GetActorLocation();
+	DraggingFromPlanet = false;
+
+	//Find world loc
+	const FVector WorldLoc = ScreenToWorldLoc(Loc);
+
+	//Find a planet that's close enough to select
+	InitiallyPressedPlanet = nullptr;
+	for (APlanet* Planet : GetGameManager()->GetPlanets())
+	{
+		const float SqrDist = FVector::DistSquared(Planet->GetActorLocation(), WorldLoc);
+		if(SqrDist > PlanetSelectRadiusSqr)
+			continue;
+
+		InitiallyPressedPlanet = Planet;
+		break;
+	}
 }
 
 void AStellarPlayerController::OnPressMoved(const FVector& Loc)
@@ -182,38 +199,46 @@ void AStellarPlayerController::OnPressMoved(const FVector& Loc)
 	//Ignore if two fingers touching
 	if(TwoFingersTouching)
 		return;
+	
+	//Handle dragging out of planet
+	if(InitiallyPressedPlanet)
+	{
+		//Get world locs
+		const FVector PlanetLoc = InitiallyPressedPlanet->GetActorLocation();
+		const FVector TouchWorldLoc = ScreenToWorldLoc(Loc);
 
-	//Update camera loc
-	FVector Offset = (CurrentTouchLoc - StartTouchLoc) * ScrollAcceleration;
-	CamActor->SetActorLocation(StartCamLoc + Offset);
+		//Check if dragged away from planet
+		if(!DraggingFromPlanet)
+		{
+			const float SqrDist = FVector::DistSquared(PlanetLoc, TouchWorldLoc);
+			if(SqrDist > PlanetSelectRadiusSqr)
+				DraggingFromPlanet = true;
+		}
+
+		//Call delegate
+		if(DraggingFromPlanet)
+			OnDraggingFromPlanet.Broadcast(PlanetLoc, TouchWorldLoc);
+	}
+	else //Update camera loc if not dragging from a planet
+	{
+		const FVector Offset = (CurrentTouchLoc - StartTouchLoc) * ScrollAcceleration;
+		CamActor->SetActorLocation(StartCamLoc + Offset);
+	}
 }
 
 void AStellarPlayerController::OnPressReleased(const FVector& Loc)
 {
-	//TODO ONLY SELECT IF DIDN'T DRAG OUT OF PLANET
-	
-	//Find world loc
-	FVector WorldLoc = ScreenToWorldLoc(Loc);
+	//No selectable planet
+	if(!InitiallyPressedPlanet)
+		return;
 
-	//Find a planet that's close enough to select
-	APlanet* PlanetToSelect = nullptr;
-	for (APlanet* Planet : GetGameManager()->GetPlanets())
-	{
-		float SqrDist = FVector::DistSquared(Planet->GetActorLocation(), WorldLoc);
-		if(SqrDist > PlanetSelectRadiusSqr)
-			continue;
-
-		PlanetToSelect = Planet;
-		break;
-	}
-
-	//No selectable planet found, return
-	if(!PlanetToSelect)
+	//Don't select planet if dragged out from it
+	if(DraggingFromPlanet)
 		return;
 
 	//Select planet
-	SelectedPlanet = PlanetToSelect;
-	OnPlanetSelected.Broadcast(PlanetToSelect);
+	SelectedPlanet = InitiallyPressedPlanet;
+	OnPlanetSelected.Broadcast(SelectedPlanet);
 }
 
 #pragma endregion

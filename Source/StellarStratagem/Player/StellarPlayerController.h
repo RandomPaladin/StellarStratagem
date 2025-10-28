@@ -13,6 +13,7 @@ class AServerManager;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlanetSelectedDelegate, APlanet*, Planet);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMessageReceivedDelegate, FString, Message);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGoldUpdatedDelegate, int, NewGoldAmount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDraggingFromPlanetDelegate, FVector, StartLoc, FVector, EndLoc);
 
 USTRUCT(BlueprintType)
 struct FPlayerData
@@ -86,11 +87,16 @@ protected:
 	FVector CurrentTouchLoc;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool TwoFingersTouching = false;
+	UPROPERTY(VisibleAnywhere)
+	bool DraggingFromPlanet = false;
 	UPROPERTY(EditAnywhere)
 	float ScrollAcceleration = 5.f;
 	UPROPERTY(EditAnywhere)
 	float PlanetSelectRadius = 200.f; //How close the player needs to click to a planet to count as selecting it
 	float PlanetSelectRadiusSqr;
+
+	UPROPERTY()
+	APlanet* InitiallyPressedPlanet;
 	UPROPERTY()
 	APlanet* SelectedPlanet;
 
@@ -154,4 +160,6 @@ public:
 	FOnMessageReceivedDelegate OnMessageReceived;
 	UPROPERTY(BlueprintAssignable)
 	FOnGoldUpdatedDelegate OnGoldUpdated;
+	UPROPERTY(BlueprintAssignable)
+	FOnDraggingFromPlanetDelegate OnDraggingFromPlanet;
 };
