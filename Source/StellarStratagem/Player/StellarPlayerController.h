@@ -153,6 +153,9 @@ public:
 	void AddGold(int Gold);
 	void RemoveGold(int Gold);
 
+	UFUNCTION(BlueprintCallable)
+	void CancelShipAttackLine(AShipAttackLine* AttackLine);
+
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FPlayerData GetPlayerData() const { return PlayerData; }

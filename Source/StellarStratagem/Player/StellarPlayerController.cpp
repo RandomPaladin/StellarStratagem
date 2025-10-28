@@ -120,6 +120,17 @@ void AStellarPlayerController::RemoveGold(const int Gold)
 	GoldAmount = FMath::Max(GoldAmount - Gold, 0);
 }
 
+void AStellarPlayerController::CancelShipAttackLine(AShipAttackLine* AttackLine)
+{
+	//Ensure attack line is owned by this player
+	if(!ShipAttackLines.Contains(AttackLine))
+		return;
+
+	//Destroy attack line
+	ShipAttackLines.Remove(AttackLine);
+	AttackLine->Destroy();
+}
+
 #pragma endregion
 
 #pragma region Actions
