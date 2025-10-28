@@ -172,7 +172,8 @@ void AStellarPlayerController::OnPress(const FVector& Loc)
 {
 	//Initial values
 	StartTouchLoc = Loc;
-	StartCamLoc = CamActor->GetActorLocation();
+	PreviousTouchLoc = StartTouchLoc;
+	CurrentTouchLoc = StartTouchLoc;
 	DraggingFromPlanet = false;
 
 	//Find world loc
@@ -220,10 +221,10 @@ void AStellarPlayerController::OnPressMoved(const FVector& Loc)
 			OnDraggingFromPlanet.Broadcast(PlanetLoc, TouchWorldLoc);
 	}
 	else //Update camera loc if not dragging from a planet
-	{
-		const FVector Offset = (CurrentTouchLoc - StartTouchLoc) * ScrollAcceleration;
-		CamActor->SetActorLocation(StartCamLoc + Offset);
-	}
+		CamActor->SetActorLocation(CamActor->GetActorLocation() + ScreenToWorldDelta(PreviousTouchLoc - CurrentTouchLoc));
+
+	//Record previous touch loc
+	PreviousTouchLoc = CurrentTouchLoc;
 }
 
 void AStellarPlayerController::OnPressReleased(const FVector& Loc)
@@ -263,10 +264,17 @@ FVector AStellarPlayerController::ScreenToWorldLoc(const FVector& ScreenLoc) con
 	FVector WorldLoc;
 	FVector WorldDir;
 	DeprojectScreenPositionToWorld(ScreenLoc.X, ScreenLoc.Y, WorldLoc, WorldDir);
-	const float DistanceToZPlane = -(WorldLoc.Z / WorldDir.Z);
+	const float DistanceToZPlane = -(WorldLoc.Z / WorldDir.Z); //Shortened from a^2 + b^2 = c^2
 	const FVector WorldLocOnZPlane = WorldLoc + WorldDir * DistanceToZPlane;
 
 	return WorldLocOnZPlane;
+}
+
+FVector AStellarPlayerController::ScreenToWorldDelta(const FVector& ScreenDelta) const
+{
+	const FVector StartWorldLoc = ScreenToWorldLoc({0, 0, 0});
+	const FVector EndWorldLoc = ScreenToWorldLoc(ScreenDelta);
+	return EndWorldLoc - StartWorldLoc;
 }
 
 APlanet* AStellarPlayerController::GetSelectedPlanet()

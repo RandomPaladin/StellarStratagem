@@ -82,15 +82,13 @@ protected:
 	AActor* CamActor;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	USpringArmComponent* CamSpringArm;
-	FVector StartCamLoc;
 	FVector StartTouchLoc;
 	FVector CurrentTouchLoc;
+	FVector PreviousTouchLoc;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool TwoFingersTouching = false;
 	UPROPERTY(VisibleAnywhere)
 	bool DraggingFromPlanet = false;
-	UPROPERTY(EditAnywhere)
-	float ScrollAcceleration = 5.f;
 	UPROPERTY(EditAnywhere)
 	float PlanetSelectRadius = 200.f; //How close the player needs to click to a planet to count as selecting it
 	float PlanetSelectRadiusSqr;
@@ -128,6 +126,7 @@ private:
 	void GoToMainMenu();
 	AGameManager* GetGameManager();
 	FVector ScreenToWorldLoc(const FVector& ScreenLoc) const;
+	FVector ScreenToWorldDelta(const FVector& ScreenDelta) const;
 
 	//Input funcs
 	UFUNCTION(BlueprintCallable)
