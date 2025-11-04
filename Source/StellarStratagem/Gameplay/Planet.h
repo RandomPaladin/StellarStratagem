@@ -9,7 +9,7 @@
 #include "StellarStratagem/Utility/HelperFunctions.h"
 #include "Planet.generated.h"
 
-class UPlanetBuildingsData;
+class UShipData;
 class UDataTable;
 class AGameManager;
 class UPlanetGradeData;
@@ -31,6 +31,37 @@ struct FBuildingSlot
 	}
 };
 
+USTRUCT(BlueprintType)
+struct FShipAttackLineData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere)
+	FPlayerData Player;
+	UPROPERTY(VisibleAnywhere)
+	int FromPlanetIndex;
+	UPROPERTY(VisibleAnywhere)
+	int ShipAmount;
+	UPROPERTY(VisibleAnywhere)
+	float Progress;
+	
+	FShipAttackLineData()
+	{
+		Player = {};
+		FromPlanetIndex = 0;
+		ShipAmount = 0;
+		Progress = 0.f;
+	}
+
+	FShipAttackLineData(const FPlayerData& InPlayer, const int InFromPlanetIndex, const int InShipAmount)
+	{
+		Player = InPlayer;
+		FromPlanetIndex = InFromPlanetIndex;
+		ShipAmount= InShipAmount;
+		Progress = 0.f;
+	}
+};
+
 UCLASS()
 class STELLARSTRATAGEM_API APlanet : public AActor
 {
@@ -46,11 +77,11 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 
 	//Data
 	UPROPERTY(EditAnywhere)
-	UPlanetGradeData* GradesData;
+	UPlanetGradeData* PlanetData;
 	UPROPERTY(EditAnywhere)
 	UDataTable* NamesData;
 	UPROPERTY(EditAnywhere)
-	UPlanetBuildingsData* BuildingsData;
+	UShipData* ShipData;
 
 	//Values
 	UPROPERTY(VisibleAnywhere, Replicated)
@@ -65,6 +96,8 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 	float ProductionDistribution = 0.5f;
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_ShipAmount)
 	float ShipAmount = 0.f;
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_IncomingAttackLines)
+	TArray<FShipAttackLineData> IncomingAttackLines;
 
 	//Art
 	UPROPERTY(EditAnywhere)
@@ -78,6 +111,8 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 	void OnRep_BuildingSlots() const;
 	UFUNCTION()
 	void OnRep_ShipAmount() const;
+	UFUNCTION()
+	void OnRep_IncomingAttackLines() const;
 
 public:
 	APlanet();
@@ -88,6 +123,7 @@ public:
 	void SetOwningPlayer(const FPlayerData& NewOwningPlayer);
 	void UpdateBuilding(AStellarPlayerController* Player, const int BuildingSlotIndex, const EBuildingType TargetBuildingType);
 	void UpdateProductionDistribution(float NewDistribution);
+	void AddIncomingAttackLine(const FPlayerData& InPlayer, const int InFromPlanetIndex, const int InShipAmount);
 	
 	int GetGeneratedGoldAmount() const;
 	float GenerateShips();
@@ -111,16 +147,22 @@ public:
 	FString GetPlanetName() const { return PlanetName; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	TArray<FBuildingSlot> GetBuildingSlots() const { return BuildingSlots; }
-	UPlanetBuildingsData* GetBuildingsData() const { return BuildingsData; }
+	UPlanetGradeData* GetPlanetData() const { return PlanetData; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FBuildingSlot GetBuildingSlot(const int BuildingSlotIndex) const { return BuildingSlots[BuildingSlotIndex]; }
 	int GetFactoryAmount() const { return Algo::CountIf(BuildingSlots, [](const FBuildingSlot& BuildingSlot){ return BuildingSlot.CurrentBuildingType == BuildingType_Factory; }); }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetShipAmount() const { return ShipAmount; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	TArray<FShipAttackLineData> GetIncomingAttackLines() const { return IncomingAttackLines; }
+
+	int GetDistanceToPlanet(const APlanet* OtherPlanet) const;
 	
 	//Delegates
 	UPROPERTY(BlueprintAssignable)
 	FNoParamDelegate OnBuildingSlotsUpdated;
 	UPROPERTY(BlueprintAssignable)
 	FNoParamDelegate OnShipAmountUpdated;
+	UPROPERTY(BlueprintAssignable)
+	FNoParamDelegate OnIncomingAttackLinesUpdated;
 };

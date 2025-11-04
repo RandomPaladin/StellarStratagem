@@ -9,4 +9,5 @@ enum EActionType
 	ActionType_Build,
 	ActionType_EndTurn,
 	ActionType_ProductionDistributionUpdate,
+	ActionType_SetAttackLine,
 };

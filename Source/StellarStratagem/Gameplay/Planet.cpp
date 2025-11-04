@@ -3,9 +3,9 @@
 #include "Engine/DataTable.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
-#include "StellarStratagem/Data/PlanetBuildingsData.h"
 #include "StellarStratagem/Data/PlanetGradeData.h"
 #include "StellarStratagem/Data/PlanetNamesDataTable.h"
+#include "StellarStratagem/Data/ShipData.h"
 
 APlanet::APlanet()
 {
@@ -36,6 +36,7 @@ void APlanet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	DOREPLIFETIME(APlanet, BuildingSlots);
 	DOREPLIFETIME(APlanet, ProductionDistribution);
 	DOREPLIFETIME(APlanet, ShipAmount);
+	DOREPLIFETIME(APlanet, IncomingAttackLines);
 }
 
 void APlanet::Setup(AGameManager* Game, const int Index)
@@ -58,12 +59,12 @@ void APlanet::Setup(AGameManager* Game, const int Index)
 	
 	//Set random grade
 	TArray<TEnumAsByte<EPlanetGrade>> AllGradesInData;
-	GradesData->Grades.GetKeys(AllGradesInData);
+	PlanetData->Grades.GetKeys(AllGradesInData);
 	Grade = AllGradesInData[FMath::RandRange(0, AllGradesInData.Num() - 1)];
 
 	//Set random building slots
 	BuildingSlots.Empty();
-	const int SlotAmount = GradesData->GenerateRandomBuildingSlotAmount(Grade);
+	const int SlotAmount = PlanetData->GenerateRandomBuildingSlotAmount(Grade);
 	for(int i = 0; i < SlotAmount; i++)
 		BuildingSlots.Add({});
 
@@ -104,7 +105,7 @@ void APlanet::UpdateBuilding(AStellarPlayerController* Player, const int Buildin
 	if(!HasCurrentBuilding && HasTargetBuilding) //Plan new building
 	{
 		//Remove gold
-		Player->RemoveGold(BuildingsData->Buildings[TargetBuildingType].GoldCost);
+		Player->RemoveGold(PlanetData->Buildings[TargetBuildingType].GoldCost);
 
 		//Plan build
 		Slot->TargetBuildingType = TargetBuildingType;
@@ -112,7 +113,7 @@ void APlanet::UpdateBuilding(AStellarPlayerController* Player, const int Buildin
 	else if(!HasCurrentBuilding && HasPlannedBuilding) //Remove plan for new building
 	{
 		//Give gold back
-		Player->AddGold(BuildingsData->Buildings[Slot->TargetBuildingType].GoldCost);
+		Player->AddGold(PlanetData->Buildings[Slot->TargetBuildingType].GoldCost);
 
 		//Unplan build
 		Slot->TargetBuildingType = BuildingType_None;
@@ -128,6 +129,21 @@ void APlanet::UpdateProductionDistribution(const float NewDistribution)
 	ProductionDistribution = NewDistribution;
 }
 
+void APlanet::AddIncomingAttackLine(const FPlayerData& InPlayer, const int InFromPlanetIndex, const int InShipAmount)
+{
+	//Check if line exists owned by this player from the same from planet
+	FShipAttackLineData* ExistingLinePtr = IncomingAttackLines.FindByPredicate([InPlayer, InFromPlanetIndex](const FShipAttackLineData& AttackLine) { return AttackLine.Player == InPlayer && AttackLine.FromPlanetIndex == InFromPlanetIndex; });
+
+	//Update existing line
+	if(ExistingLinePtr)
+	{
+		FShipAttackLineData& ExistingLine = *ExistingLinePtr;
+		ExistingLine.ShipAmount = InShipAmount;
+	}
+	else //No existing line, create one
+		IncomingAttackLines.Add({InPlayer, InFromPlanetIndex, InShipAmount});
+}
+
 #pragma region Replication Funcs
 
 void APlanet::OnRep_BuildingSlots() const
@@ -140,12 +156,17 @@ void APlanet::OnRep_ShipAmount() const
 	OnShipAmountUpdated.Broadcast();
 }
 
+void APlanet::OnRep_IncomingAttackLines() const
+{
+	OnIncomingAttackLinesUpdated.Broadcast();
+}
+
 #pragma endregion
 
 int APlanet::GetGeneratedGoldAmount() const
 {
 	//Multiply with gold per factory from grades data to get gold amount
-	int GoldAmount = GetFactoryAmount() * GradesData->Grades[Grade].GoldPerFactoryPerRound;
+	int GoldAmount = GetFactoryAmount() * PlanetData->Grades[Grade].GoldPerFactoryPerRound;
 
 	//Apply production distribution
 	GoldAmount *= ProductionDistribution;
@@ -156,7 +177,7 @@ int APlanet::GetGeneratedGoldAmount() const
 float APlanet::GenerateShips()
 {
 	//Multiply with ships per factory from grades data to get ship amount
-	float GeneratedShipAmount = (float)GetFactoryAmount() * GradesData->Grades[Grade].ShipsPerFactoryPerRound;
+	float GeneratedShipAmount = (float)GetFactoryAmount() * PlanetData->Grades[Grade].ShipsPerFactoryPerRound;
 	
 	//Apply production distribution
 	GeneratedShipAmount *= 1.f - ProductionDistribution;
