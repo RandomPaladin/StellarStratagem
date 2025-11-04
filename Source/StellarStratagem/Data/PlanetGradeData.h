@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "StellarStratagem/Actions/BuildingType.h"
 #include "PlanetGradeData.generated.h"
 
 UENUM(BlueprintType)
@@ -36,6 +37,15 @@ struct FGradeData
 	FRuntimeFloatCurve BuildingSlotsDistribution;
 };
 
+USTRUCT(BlueprintType)
+struct FBuildingData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	int GoldCost;
+};
+
 UCLASS(Blueprintable)
 class STELLARSTRATAGEM_API UPlanetGradeData : public UDataAsset
 {
@@ -44,6 +54,12 @@ class STELLARSTRATAGEM_API UPlanetGradeData : public UDataAsset
 public:
 	UPROPERTY(EditAnywhere)
 	TMap<TEnumAsByte<EPlanetGrade>, FGradeData> Grades;
+	UPROPERTY(EditAnywhere)
+	TMap<TEnumAsByte<EBuildingType>, FBuildingData> Buildings;
+	UPROPERTY(EditAnywhere)
+	FIntPoint DistanceBetweenPlanetsRange = FIntPoint{5, 15};
+	UPROPERTY(EditAnywhere)
+	float DistanceBetweenPlanetsToUnrealUnitsMultiplier = 350.f;
 	
 	int GenerateRandomBuildingSlotAmount(EPlanetGrade Grade);
 	
