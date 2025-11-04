@@ -76,6 +76,8 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 	int StartingGold = 100;
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_GoldAmount)
 	int GoldAmount = 0;
+	UPROPERTY(VisibleAnywhere, Replicated)
+	float TechLevel = 0.f;
 
 	//Input vars
 protected:
@@ -163,6 +165,7 @@ public:
 	APlanet* GetSelectedPlanet();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int GetGold() const { return GoldAmount; }
+	int GetTechLevel() const { return FMath::Floor(TechLevel); }
 
 	//Delegates
 	UPROPERTY(BlueprintAssignable)

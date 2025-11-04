@@ -5,6 +5,7 @@
 #include "StellarStratagem/Actions/BuildAction.h"
 #include "StellarStratagem/Actions/EndTurnAction.h"
 #include "StellarStratagem/Actions/ProductionDistributionUpdateAction.h"
+#include "StellarStratagem/Actions/SetAttackLineAction.h"
 #include "StellarStratagem/Gameplay/GameManager.h"
 #include "StellarStratagem/Gameplay/Planet.h"
 #include "StellarStratagem/Gameplay/ServerManager.h"
@@ -16,6 +17,7 @@ void AStellarPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 
 	DOREPLIFETIME(AStellarPlayerController, PlayerData);
 	DOREPLIFETIME(AStellarPlayerController, GoldAmount);
+	DOREPLIFETIME(AStellarPlayerController, TechLevel);
 }
 
 void AStellarPlayerController::BeginPlay()
@@ -153,6 +155,9 @@ void AStellarPlayerController::SendAction_Server_Implementation(const FActionDat
 		case ActionType_ProductionDistributionUpdate:
 			ClassType = UProductionDistributionUpdateAction::StaticClass();
 			break;
+		case ActionType_SetAttackLine:
+			ClassType = USetAttackLineAction::StaticClass();
+			break;
 		default:
 			UE_LOG(LogTemp, Error, TEXT("ACTION TYPE IS NOT BEING HANDLED"))
 			return;
@@ -251,7 +256,17 @@ void AStellarPlayerController::OnPressReleased(const FVector& Loc)
 			APlanet* ReleasedOnPlanet = GetHoveredPlanet(Loc);
 			if(ReleasedOnPlanet && !ReleasedOnPlanet->IsOwnedByPlayer(PlayerData))
 			{
-				CurrentShipAttackLine->SetupAttackLine(this, InitiallyPressedPlanet, ReleasedOnPlanet);
+				//If an attack line between these planets already exists, use that one instead
+				AShipAttackLine** ExistingAttackLinePtr = ShipAttackLines.FindByPredicate([this, ReleasedOnPlanet](const AShipAttackLine* AttackLine) { return AttackLine->GetFromPlanet() == InitiallyPressedPlanet && AttackLine->GetTargetPlanet() == ReleasedOnPlanet; });
+				if(ExistingAttackLinePtr)
+				{
+					ShipAttackLines.Remove(CurrentShipAttackLine);
+					CurrentShipAttackLine->Destroy();
+					CurrentShipAttackLine = *ExistingAttackLinePtr;
+				}
+				else //No existing attack line, setup this one
+					CurrentShipAttackLine->SetupAttackLine(this, InitiallyPressedPlanet, ReleasedOnPlanet);
+				
 				OnShipAttackLineCreated.Broadcast(CurrentShipAttackLine);
 			}
 			else //Destroy attack line if not released on an enemy planet
