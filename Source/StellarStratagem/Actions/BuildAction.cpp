@@ -1,19 +1,25 @@
 #include "BuildAction.h"
-#include "StellarStratagem/Data/PlanetBuildingsData.h"
 #include "StellarStratagem/Gameplay/GameManager.h"
 #include "StellarStratagem/Gameplay/Planet.h"
 
 FActionResult UBuildAction::PerformAction(AGameManager* GameManager, AStellarPlayerController* Player)
 {
-	APlanet* Planet = GameManager->GetPlanets()[Data.IntValue];
-	const int BuildingSlotIndex = Data.IntValue2;
-
 	//Ensure this is only done on the server
-	if(!Planet->HasAuthority())
+	if(!GameManager->HasAuthority())
 	{
 		UE_LOG(LogTemp, Error, TEXT("TRYING TO BUILD ON PLANET OUTSIDE OF SERVER"))
 		return {false, "Action was not performed on the server."};
 	}
+	
+	//Ensure given planet index is valid
+	if(Data.IntValue < 0 || Data.IntValue >= GameManager->GetPlanets().Num())
+	{
+		UE_LOG(LogTemp, Error, TEXT("INVALID PLANET INDEX"))
+		return {false, "Invalid planet given."};
+	}
+	
+	APlanet* Planet = GameManager->GetPlanets()[Data.IntValue];
+	const int BuildingSlotIndex = Data.IntValue2;
 
 	//Ensure player owns this planet
 	if(Planet->GetOwningPlayer() != Player->GetPlayerData())
@@ -39,7 +45,7 @@ FActionResult UBuildAction::PerformAction(AGameManager* GameManager, AStellarPla
 	if(!HasCurrentBuilding && HasTargetBuilding) 
 	{
 		//Ensure the player has enough gold
-		const int GoldCost = Planet->GetBuildingsData()->Buildings[TargetBuildingType].GoldCost;
+		const int GoldCost = Planet->GetPlanetData()->Buildings[TargetBuildingType].GoldCost;
 		if(Player->GetGold() < GoldCost)
 		{
 			UE_LOG(LogTemp, Error, TEXT("PLAYER DOES NOT HAVE ENOUGH GOLD TO BUILD THIS"))

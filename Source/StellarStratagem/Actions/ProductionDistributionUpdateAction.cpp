@@ -2,10 +2,15 @@
 #include "StellarStratagem/Gameplay/GameManager.h"
 #include "StellarStratagem/Gameplay/Planet.h"
 
-class APlanet;
-
 FActionResult UProductionDistributionUpdateAction::PerformAction(AGameManager* GameManager, AStellarPlayerController* Player)
 {
+	//Ensure given planet index is valid
+	if(Data.IntValue < 0 || Data.IntValue >= GameManager->GetPlanets().Num())
+	{
+		UE_LOG(LogTemp, Error, TEXT("INVALID PLANET INDEX"))
+		return {false, "Invalid planet given."};
+	}
+	
 	APlanet* Planet = GameManager->GetPlanets()[Data.IntValue];
 
 	//Ensure this is only done on the server
