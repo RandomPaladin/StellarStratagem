@@ -211,6 +211,8 @@ void AGameManager::GoToNextRound()
 			const int OwningPlayerEntryIndex = GetIndexOfPlayersResolutionResults(Planet->GetOwningPlayer());
 			PlayersResolutionResults[OwningPlayerEntryIndex].Results.Add({RoundResolutionResultType_Resources, FString::Printf(TEXT("%.1f ships were produced on %s."), ShipsGenerated, *Planet->GetPlanetName())});
 		}
+
+		//TODO GENERATE TECH LEVEL XP
 	}
 
 	//Add entries for gold generation
@@ -258,7 +260,26 @@ void AGameManager::GoToNextRound()
 		}
 	}
 
-	//Complete ship movement
+	//Resolve ship movement
+	for (APlanet* Planet : Planets)
+	{
+		Planet->ResolveShipMovement();
+		for (FShipAttackLineData IncomingAttackLine : Planet->GetIncomingAttackLines())
+		{
+			const int OwningPlayerIndex = GetIndexOfPlayersResolutionResults(IncomingAttackLine.Player);
+			FString ResultString = "";
+			if(FMath::IsNearlyEqual(IncomingAttackLine.Progress, 1.f))
+				ResultString = FString::Printf(TEXT("%d ships have reached planet %s"), IncomingAttackLine.ShipAmount, *Planet->GetPlanetName());
+			else
+			{
+				int Progress = FMath::RoundToInt(IncomingAttackLine.Progress * 100.f);
+				ResultString = FString::Printf(TEXT("%d ships have traveled %d%% of the way from planet %s to planet %s"), IncomingAttackLine.ShipAmount, Progress, *Planets[IncomingAttackLine.FromPlanetIndex]->GetPlanetName(), *Planet->GetPlanetName());
+			}
+			
+			PlayersResolutionResults[OwningPlayerIndex].Results.Add({RoundResolutionResultType_Resources, ResultString});
+		}
+		//TODO
+	}
 
 	//Resolve combat
 

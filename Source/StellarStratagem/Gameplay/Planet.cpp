@@ -209,3 +209,25 @@ void APlanet::ResolveBuildingPlans(TArray<TTuple<bool, EBuildingType>>& Results)
 		Results.Add(TTuple<bool, EBuildingType>{Built, Built ? BuildingSlot.CurrentBuildingType : PreviousBuildingType});
 	}
 }
+
+void APlanet::ResolveShipMovement()
+{
+	for(FShipAttackLineData& IncomingAttackLine : IncomingAttackLines)
+	{
+		//Calculate ship travel distance including player tech level
+		const int ShipMaxDist = ShipData->DefaultShipMoveDistance + GameManager->GetPlayerControllerByPlayerData(IncomingAttackLine.Player)->GetTechLevel();
+		const int ShipStepDist = ShipMaxDist / ShipData->MoveDistancePerTurnDivisor;
+
+		//Find total distance between from and target planets
+		const int TotalDist = GetDistanceToPlanet(GameManager->GetPlanets()[IncomingAttackLine.FromPlanetIndex]);
+		
+		//Update progress
+		const float NewProgress = IncomingAttackLine.Progress + ((float)ShipStepDist / (float)TotalDist);
+		IncomingAttackLine.Progress = FMath::Clamp(NewProgress, 0.f, 1.f);
+	}
+}
+
+int APlanet::GetDistanceToPlanet(const APlanet* OtherPlanet) const
+{
+	return FMath::RoundToInt(FVector::Distance(GetActorLocation(), OtherPlanet->GetActorLocation()) / PlanetData->DistanceBetweenPlanetsToUnrealUnitsMultiplier);
+}

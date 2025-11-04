@@ -128,7 +128,8 @@ public:
 	int GetGeneratedGoldAmount() const;
 	float GenerateShips();
 	void ResolveBuildingPlans(OUT TArray<TTuple<bool, EBuildingType>>& Results); //bool: If building was built or destroyed, BuildingType: Building type that was built or destroyed
-
+	void ResolveShipMovement();
+	
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	AGameManager* GetGameManager() const { return GameManager; }
