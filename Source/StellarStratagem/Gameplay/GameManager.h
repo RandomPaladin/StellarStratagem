@@ -1,0 +1,158 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "StellarStratagem/Player/StellarPlayerController.h"
+#include "StellarStratagem/Utility/HelperFunctions.h"
+#include "GameManager.generated.h"
+
+class APlanet;
+class AServerManager;
+class AStellarPlayerController;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameStateChanged, bool, Started);
+
+UENUM(BlueprintType)
+enum ERoundResolutionResultType
+{
+	RoundResolutionResultType_None,
+	RoundResolutionResultType_Combat,
+	RoundResolutionResultType_Resources,
+};
+
+USTRUCT(BlueprintType)
+struct FRoundResolutionResult
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere)
+	TEnumAsByte<ERoundResolutionResultType> ResultType;
+	UPROPERTY(VisibleAnywhere)
+	FString Result;
+
+	FRoundResolutionResult()
+	{
+		ResultType = RoundResolutionResultType_None;
+		Result = "";
+	}
+
+	FRoundResolutionResult(const TEnumAsByte<ERoundResolutionResultType> InResultType, FString InResult)
+	{
+		ResultType = InResultType;
+		Result = InResult;
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FRoundResolutionResults
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere)
+	FPlayerData Player;
+	UPROPERTY(VisibleAnywhere)
+	TArray<FRoundResolutionResult> Results;
+
+	FRoundResolutionResults()
+	{
+		Player = {};
+		Results = {};
+	}
+
+	FRoundResolutionResults(const FPlayerData& InPlayerData)
+	{
+		Player = InPlayerData;
+		Results = {};
+	}
+};
+
+UCLASS()
+class STELLARSTRATAGEM_API AGameManager : public AActor
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere)
+	AServerManager* ServerManager;
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	int Round = 0;
+	
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_GameStarted)
+	bool GameStarted = false;
+
+	//Replication callbacks
+	UFUNCTION()
+	void OnRep_ConnectedPlayers() const;
+	UFUNCTION()
+	void OnRep_GameStarted() const;
+
+	UPROPERTY(VisibleAnywhere)
+	TMap<AActor*, AStellarPlayerController*> ConnectedPlayers;
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_ConnectedPlayers)
+	TArray<FPlayerData> AllPlayers;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<FPlayerData> AwaitedPlayers;
+
+	//Planets
+	UPROPERTY(EditAnywhere, Category=Planets)
+	TSubclassOf<APlanet> PlanetTemplate;
+	UPROPERTY(EditAnywhere, Category=Planets)
+	int SpawnPlanetsPerPlayer = 5;
+	UPROPERTY(EditAnywhere, Category=Planets)
+	FVector2D SpawnPlanetXLocRange = {-3000.f, 3000.f};
+	UPROPERTY(EditAnywhere, Category=Planets)
+	FVector2D SpawnPlanetYLocRange = {-3000.f, 3000.f};
+	UPROPERTY(EditAnywhere, Category=Planets)
+	FVector2D SpawnPlanetRotRange = {0.f, 359.f};
+	UPROPERTY(VisibleAnywhere, Category=Planets)
+	TArray<APlanet*> Planets;
+
+	//Gameplay
+private:
+	void GoToNextRound();
+public:
+	void RegisterPlanet(APlanet* Planet);
+
+private:
+	UPROPERTY(VisibleAnywhere, Replicated)
+	TArray<FRoundResolutionResults> PlayersResolutionResults;
+
+	//Setup
+public:
+	AGameManager();
+	virtual bool IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void BeginPlay() override;
+
+	//Lobby
+	void AddPlayer(AStellarPlayerController* Player);
+	void RemovePlayer(AStellarPlayerController* Player);
+
+	//Game
+	void StartGame();
+	void EndTurn(AStellarPlayerController* Player);
+
+	//Getters
+	TMap<AActor*, AStellarPlayerController*> GetConnectedPlayers() const { return ConnectedPlayers; }
+	TArray<AStellarPlayerController*> GetConnectedPlayerControllers() const;
+	AStellarPlayerController* GetPlayerControllerByPlayerData(const FPlayerData& PlayerData);
+	TArray<FPlayerData> GetAwaitedPlayers() const { return AwaitedPlayers; }
+	int GetPlayerAmount() const { return AllPlayers.Num(); }
+	bool GetGameStarted() const { return GameStarted; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool IsPlayerPartOfGame(const FPlayerData& Player) const { return AllPlayers.FindByPredicate([Player](const FPlayerData& PlayerItem){ return PlayerItem == Player; }) != nullptr; }
+	int GetIndexOfPlayersResolutionResults(const FPlayerData& Player) const { return PlayersResolutionResults.IndexOfByPredicate([Player](const FRoundResolutionResults& Results) { return Results.Player == Player; }); };
+
+	TArray<APlanet*> GetPlanets() const { return Planets; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	TArray<APlanet*> GetPlanetsOwnedByPlayer(const FPlayerData& Player);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	APlanet* GetPlanetByName(const FString& InName);
+	
+	//Delegates
+	UPROPERTY(BlueprintAssignable)
+	FNoParamDelegate OnPlayersUpdated;
+	UPROPERTY(BlueprintAssignable)
+	FOnGameStateChanged OnGameStateUpdated;
+};
