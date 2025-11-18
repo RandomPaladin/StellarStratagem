@@ -176,9 +176,11 @@ void AGameManager::GoToNextRound()
 		if(!PlayersResolutionResults.ContainsByPredicate([Player](const FRoundResolutionResults& Results){ return Results.Player == Player; }))
 			PlayersResolutionResults.Add(Player);
 	}
+	
+	TArray<FRoundResolutionResults> NewResults = PlayersResolutionResults;
 
 	//Clear resolution results
-	for (FRoundResolutionResults& PlayerResolutionResult : PlayersResolutionResults)
+	for (FRoundResolutionResults& PlayerResolutionResult : NewResults)
 		PlayerResolutionResult.Results.Empty();
 
 	//Generate building resources
@@ -209,7 +211,7 @@ void AGameManager::GoToNextRound()
 		if(ShipsGenerated > 0.f)
 		{
 			const int OwningPlayerEntryIndex = GetIndexOfPlayersResolutionResults(Planet->GetOwningPlayer());
-			PlayersResolutionResults[OwningPlayerEntryIndex].Results.Add({RoundResolutionResultType_Resources, FString::Printf(TEXT("%.1f ships were produced on %s."), ShipsGenerated, *Planet->GetPlanetName())});
+			NewResults[OwningPlayerEntryIndex].Results.Add({RoundResolutionResultType_Resources, FString::Printf(TEXT("%.1f ships were produced on %s."), ShipsGenerated, *Planet->GetPlanetName())});
 		}
 
 		//TODO GENERATE TECH LEVEL XP
@@ -223,7 +225,7 @@ void AGameManager::GoToNextRound()
 			continue;
 		
 		const int OwningPlayerEntryIndex = GetIndexOfPlayersResolutionResults(Kvp.Key);
-		PlayersResolutionResults[OwningPlayerEntryIndex].Results.Add({RoundResolutionResultType_Resources, FString::Printf(TEXT("Your planets produced %d credits."), Kvp.Value)});
+		NewResults[OwningPlayerEntryIndex].Results.Add({RoundResolutionResultType_Resources, FString::Printf(TEXT("Your planets produced %d credits."), Kvp.Value)});
 	}
 	
 	//Resolve building plans
@@ -256,7 +258,7 @@ void AGameManager::GoToNextRound()
 			}
 			FString BuildingResultString = Result.Key ? "built" : "destroyed";
 			FString ResultString = FString::Printf(TEXT("%s was %s on planet %s."), *BuildingTypeString, *BuildingResultString, *Planet->GetPlanetName());
-			PlayersResolutionResults[OwningPlayerEntryIndex].Results.Add({RoundResolutionResultType_Resources, ResultString});
+			NewResults[OwningPlayerEntryIndex].Results.Add({RoundResolutionResultType_Resources, ResultString});
 		}
 	}
 
@@ -276,14 +278,15 @@ void AGameManager::GoToNextRound()
 				ResultString = FString::Printf(TEXT("%d ships have traveled %d%% of the way from planet %s to planet %s"), IncomingAttackLine.ShipAmount, Progress, *Planets[IncomingAttackLine.FromPlanetIndex]->GetPlanetName(), *Planet->GetPlanetName());
 			}
 			
-			PlayersResolutionResults[OwningPlayerIndex].Results.Add({RoundResolutionResultType_Resources, ResultString});
+			NewResults[OwningPlayerIndex].Results.Add({RoundResolutionResultType_Resources, ResultString});
 		}
-		//TODO
 	}
 
 	//Resolve combat
-
+	//TODO
+	
 	//Send result to clients
+	PlayersResolutionResults = NewResults;
 }
 
 void AGameManager::RegisterPlanet(APlanet* Planet)
@@ -304,6 +307,11 @@ void AGameManager::RegisterPlanet(APlanet* Planet)
 void AGameManager::OnRep_GameStarted() const
 {
 	OnGameStateUpdated.Broadcast(GameStarted);
+}
+
+void AGameManager::OnRep_PlayersResolutionResults() const
+{
+	OnPlayersResolutionResultsUpdated.Broadcast();
 }
 
 void AGameManager::OnRep_ConnectedPlayers() const

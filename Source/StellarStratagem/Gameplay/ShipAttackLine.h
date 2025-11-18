@@ -7,15 +7,12 @@
 
 class APlanet;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnShipAttackLineLocUpdatedDelegate, FVector, NewTargetLoc);
+
 UCLASS()
 class STELLARSTRATAGEM_API AShipAttackLine : public AActor
 {
 	GENERATED_BODY()
-
-	UPROPERTY(VisibleAnywhere)
-	USceneComponent* RootComp;
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* StaticMeshComp;
 
 	UPROPERTY(VisibleAnywhere)
 	AStellarPlayerController* Player;
@@ -29,7 +26,7 @@ public:
 
 	void SetTargetLoc(const FVector& Loc) const;
 	void SetupAttackLine(AStellarPlayerController* InPlayer, APlanet* InFromPlanet, APlanet* InTargetPlanet);
-
+	
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	AStellarPlayerController* GetOwningPlayer() const { return Player; }
@@ -37,4 +34,8 @@ public:
 	APlanet* GetFromPlanet() const { return FromPlanet; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	APlanet* GetTargetPlanet() const { return TargetPlanet; }
+
+	//Delegates
+	UPROPERTY(BlueprintAssignable)
+	FOnShipAttackLineLocUpdatedDelegate OnShipAttackLineTargetLocUpdated;
 };
