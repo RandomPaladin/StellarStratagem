@@ -126,6 +126,7 @@ public:
 	void AddIncomingAttackLine(const FPlayerData& InPlayer, const int InFromPlanetIndex, const int InShipAmount);
 	
 	int GetGeneratedGoldAmount() const;
+	float GetGeneratedTechXPAmount() const;
 	float GenerateShips();
 	void ResolveBuildingPlans(OUT TArray<TTuple<bool, EBuildingType>>& Results); //bool: If building was built or destroyed, BuildingType: Building type that was built or destroyed
 	void ResolveShipMovement();
@@ -151,7 +152,7 @@ public:
 	UPlanetGradeData* GetPlanetData() const { return PlanetData; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FBuildingSlot GetBuildingSlot(const int BuildingSlotIndex) const { return BuildingSlots[BuildingSlotIndex]; }
-	int GetFactoryAmount() const { return Algo::CountIf(BuildingSlots, [](const FBuildingSlot& BuildingSlot){ return BuildingSlot.CurrentBuildingType == BuildingType_Factory; }); }
+	int GetBuildingAmount(EBuildingType BuildingType) const { return Algo::CountIf(BuildingSlots, [BuildingType](const FBuildingSlot& BuildingSlot){ return BuildingSlot.CurrentBuildingType == BuildingType; }); }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetShipAmount() const { return ShipAmount; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)

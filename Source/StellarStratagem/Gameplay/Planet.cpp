@@ -166,7 +166,7 @@ void APlanet::OnRep_IncomingAttackLines() const
 int APlanet::GetGeneratedGoldAmount() const
 {
 	//Multiply with gold per factory from grades data to get gold amount
-	int GoldAmount = GetFactoryAmount() * PlanetData->Grades[Grade].GoldPerFactoryPerRound;
+	int GoldAmount = GetBuildingAmount(BuildingType_Factory) * PlanetData->Grades[Grade].GoldPerFactoryPerRound;
 
 	//Apply production distribution
 	GoldAmount *= ProductionDistribution;
@@ -174,10 +174,16 @@ int APlanet::GetGeneratedGoldAmount() const
 	return GoldAmount;
 }
 
+float APlanet::GetGeneratedTechXPAmount() const
+{
+	//Multiply with tech xp per research building to get tech xp amount
+	return (float)GetBuildingAmount(BuildingType_Research) * PlanetData->TechXPPercentPerResearchBuildingPerRound;
+}
+
 float APlanet::GenerateShips()
 {
 	//Multiply with ships per factory from grades data to get ship amount
-	float GeneratedShipAmount = (float)GetFactoryAmount() * PlanetData->Grades[Grade].ShipsPerFactoryPerRound;
+	float GeneratedShipAmount = (float)GetBuildingAmount(BuildingType_Factory) * PlanetData->Grades[Grade].ShipsPerFactoryPerRound;
 	
 	//Apply production distribution
 	GeneratedShipAmount *= 1.f - ProductionDistribution;

@@ -57,6 +57,8 @@ public:
 	UPROPERTY(EditAnywhere)
 	TMap<TEnumAsByte<EBuildingType>, FBuildingData> Buildings;
 	UPROPERTY(EditAnywhere)
+	float TechXPPercentPerResearchBuildingPerRound = 0.05f;
+	UPROPERTY(EditAnywhere)
 	FIntPoint DistanceBetweenPlanetsRange = FIntPoint{5, 15};
 	UPROPERTY(EditAnywhere)
 	float DistanceBetweenPlanetsToUnrealUnitsMultiplier = 350.f;

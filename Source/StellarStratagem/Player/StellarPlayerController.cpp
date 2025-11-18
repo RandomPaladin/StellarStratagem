@@ -122,6 +122,19 @@ void AStellarPlayerController::RemoveGold(const int Gold)
 	GoldAmount = FMath::Max(GoldAmount - Gold, 0);
 }
 
+void AStellarPlayerController::AddTechXP(const float Xp)
+{
+	//Ensure this is performed on the server
+	if(!HasAuthority())
+	{
+		UE_LOG(LogTemp, Error, TEXT("TRYING TO ADD TECH XP OUTSIDE OF SERVER"))
+		return;
+	}
+
+	//Add xp
+	TechLevel += Xp;
+}
+
 void AStellarPlayerController::CancelShipAttackLine(AShipAttackLine* AttackLine)
 {
 	//Ensure attack line is owned by this player

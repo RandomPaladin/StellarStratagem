@@ -154,6 +154,7 @@ public:
 
 	void AddGold(int Gold);
 	void RemoveGold(int Gold);
+	void AddTechXP(float Xp);
 
 	UFUNCTION(BlueprintCallable)
 	void CancelShipAttackLine(AShipAttackLine* AttackLine);

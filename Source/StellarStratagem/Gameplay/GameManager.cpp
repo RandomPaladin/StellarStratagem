@@ -185,24 +185,34 @@ void AGameManager::GoToNextRound()
 
 	//Generate building resources
 	TMap<FPlayerData, int> GeneratedGold;
+	TMap<FPlayerData, float> GeneratedTechXP;
 	for (APlanet* Planet : Planets)
 	{
 		//Ignore unowned planets
 		if(!Planet->IsOwnedByAnyPlayer())
 			continue;
 
+		FPlayerData OwningPlayer = Planet->GetOwningPlayer();
+		
 		//Generate gold
 		const int GoldAmount = Planet->GetGeneratedGoldAmount();
-
-		//Give generated gold to owning player
-		FPlayerData OwningPlayer = Planet->GetOwningPlayer();
-		GetPlayerControllerByPlayerData(OwningPlayer)->AddGold(GoldAmount); //TODO HANDLE DOING THIS WHILE PLAYER IS DISCONNECTED
+		GetPlayerControllerByPlayerData(OwningPlayer)->AddGold(GoldAmount); //TODO HANDLE DOING THIS WHILE PLAYER IS DISCONNECTED (MOVE PLAYER INFO TO STRUCTS ON GAME MANAGER, HAVE CONTROLLER ONLY SEND ACTIONS)
 
 		//Record amount of gold generated per player
 		if(GeneratedGold.Contains(OwningPlayer))
 			GeneratedGold[OwningPlayer] += GoldAmount;
 		else
 			GeneratedGold.Add(OwningPlayer, GoldAmount);
+
+		//Generate tech xp
+		const float TechXPAmount = Planet->GetGeneratedTechXPAmount();
+		GetPlayerControllerByPlayerData(OwningPlayer)->AddTechXP(TechXPAmount);
+
+		//Record amount of tech xp generated per player
+		if(GeneratedTechXP.Contains(OwningPlayer))
+			GeneratedTechXP[OwningPlayer] += TechXPAmount;
+		else
+			GeneratedTechXP.Add(OwningPlayer, TechXPAmount);
 
 		//Generate ships
 		const float ShipsGenerated = Planet->GenerateShips();
@@ -213,8 +223,6 @@ void AGameManager::GoToNextRound()
 			const int OwningPlayerEntryIndex = GetIndexOfPlayersResolutionResults(Planet->GetOwningPlayer());
 			NewResults[OwningPlayerEntryIndex].Results.Add({RoundResolutionResultType_Resources, FString::Printf(TEXT("%.1f ships were produced on %s."), ShipsGenerated, *Planet->GetPlanetName())});
 		}
-
-		//TODO GENERATE TECH LEVEL XP
 	}
 
 	//Add entries for gold generation
@@ -226,6 +234,17 @@ void AGameManager::GoToNextRound()
 		
 		const int OwningPlayerEntryIndex = GetIndexOfPlayersResolutionResults(Kvp.Key);
 		NewResults[OwningPlayerEntryIndex].Results.Add({RoundResolutionResultType_Resources, FString::Printf(TEXT("Your planets produced %d credits."), Kvp.Value)});
+	}
+
+	//Add entries for tech xp generation
+	for (TTuple<FPlayerData, float> Kvp : GeneratedTechXP)
+	{
+		//Ignore if no tech xp was generated
+		if(Kvp.Value <= 0)
+			continue;
+		
+		const int OwningPlayerEntryIndex = GetIndexOfPlayersResolutionResults(Kvp.Key);
+		NewResults[OwningPlayerEntryIndex].Results.Add({RoundResolutionResultType_Resources, FString::Printf(TEXT("Your planets produced %.2f tech XP."), Kvp.Value)});
 	}
 	
 	//Resolve building plans
