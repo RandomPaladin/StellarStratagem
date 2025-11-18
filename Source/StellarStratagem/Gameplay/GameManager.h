@@ -25,9 +25,9 @@ struct FRoundResolutionResult
 {
 	GENERATED_BODY()
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TEnumAsByte<ERoundResolutionResultType> ResultType;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FString Result;
 
 	FRoundResolutionResult()
@@ -48,9 +48,9 @@ struct FRoundResolutionResults
 {
 	GENERATED_BODY()
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FPlayerData Player;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<FRoundResolutionResult> Results;
 
 	FRoundResolutionResults()
@@ -85,6 +85,8 @@ class STELLARSTRATAGEM_API AGameManager : public AActor
 	void OnRep_ConnectedPlayers() const;
 	UFUNCTION()
 	void OnRep_GameStarted() const;
+	UFUNCTION()
+	void OnRep_PlayersResolutionResults() const;
 
 	UPROPERTY(VisibleAnywhere)
 	TMap<AActor*, AStellarPlayerController*> ConnectedPlayers;
@@ -115,7 +117,7 @@ public:
 	void RegisterPlanet(APlanet* Planet);
 
 private:
-	UPROPERTY(VisibleAnywhere, Replicated)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_PlayersResolutionResults)
 	TArray<FRoundResolutionResults> PlayersResolutionResults;
 
 	//Setup
@@ -142,17 +144,22 @@ public:
 	bool GetGameStarted() const { return GameStarted; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsPlayerPartOfGame(const FPlayerData& Player) const { return AllPlayers.FindByPredicate([Player](const FPlayerData& PlayerItem){ return PlayerItem == Player; }) != nullptr; }
-	int GetIndexOfPlayersResolutionResults(const FPlayerData& Player) const { return PlayersResolutionResults.IndexOfByPredicate([Player](const FRoundResolutionResults& Results) { return Results.Player == Player; }); };
 
 	TArray<APlanet*> GetPlanets() const { return Planets; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	TArray<APlanet*> GetPlanetsOwnedByPlayer(const FPlayerData& Player);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	APlanet* GetPlanetByName(const FString& InName);
+
+	int GetIndexOfPlayersResolutionResults(const FPlayerData& Player) const { return PlayersResolutionResults.IndexOfByPredicate([Player](const FRoundResolutionResults& Results) { return Results.Player == Player; }); };
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FRoundResolutionResults GetPlayerResolutionResults(const FPlayerData& Player) const { return PlayersResolutionResults[GetIndexOfPlayersResolutionResults(Player)]; }
 	
 	//Delegates
 	UPROPERTY(BlueprintAssignable)
 	FNoParamDelegate OnPlayersUpdated;
 	UPROPERTY(BlueprintAssignable)
 	FOnGameStateChanged OnGameStateUpdated;
+	UPROPERTY(BlueprintAssignable)
+	FNoParamDelegate OnPlayersResolutionResultsUpdated;
 };
