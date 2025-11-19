@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PlayerData.h"
 #include "GameFramework/PlayerController.h"
 #include "StellarStratagem/Actions/ActionBase.h"
 #include "StellarPlayerController.generated.h"
@@ -10,47 +11,12 @@ class APlanet;
 class AGameManager;
 class USpringArmComponent;
 class AServerManager;
+struct FActionData;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlanetSelectedDelegate, APlanet*, Planet);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMessageReceivedDelegate, FString, Message);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGoldUpdatedDelegate, int, NewGoldAmount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnShipAttackLineCreatedDelegate, AShipAttackLine*, ShipAttackLine);
-
-USTRUCT(BlueprintType)
-struct FPlayerData
-{
-	GENERATED_BODY()
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	FString Username;
-	
-	FPlayerData()
-	{
-		Username = "";
-	}
-
-	FPlayerData(FString InUsername)
-	{
-		Username = InUsername;
-	}
-
-	bool IsValid() const { return !Username.IsEmpty(); }
-	
-	bool operator ==(const FPlayerData& Other) const
-	{
-		return Username == Other.Username;
-	}
-
-	bool operator !=(const FPlayerData& Other) const
-	{
-		return Username != Other.Username;
-	}
-};
-
-FORCEINLINE uint32 GetTypeHash(const FPlayerData& PlayerData)
-{
-	return GetTypeHash(PlayerData.Username);
-}
 
 UCLASS()
 class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController

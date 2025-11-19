@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "ActionType.h"
 #include "BuildingType.h"
+#include "StellarStratagem/Gameplay/ShipAttackLineData.h"
 #include "ActionBase.generated.h"
 
 class AGameManager;
@@ -25,6 +26,8 @@ struct FActionData
 	float NumberValue;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TEnumAsByte<EBuildingType> BuildingType;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FShipAttackLineData ShipAttackLine;
 
 	FActionData()
 	{
@@ -34,6 +37,7 @@ struct FActionData
 		NumberValue = 0.f;
 		ActionType = ActionType_None;
 		BuildingType = BuildingType_None;
+		ShipAttackLine = {};
 	}
 };
 
@@ -53,7 +57,7 @@ struct FActionResult
 		Message = "";
 	}
 
-	FActionResult(bool InSucceeded, FString InMessage)
+	FActionResult(const bool InSucceeded, FString InMessage)
 	{
 		Succeeded = InSucceeded;
 		Message = InMessage;

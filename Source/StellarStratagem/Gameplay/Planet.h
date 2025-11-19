@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ShipAttackLineData.h"
 #include "Algo/Count.h"
 #include "GameFramework/Actor.h"
 #include "StellarStratagem/Actions/BuildingType.h"
@@ -28,37 +29,6 @@ struct FBuildingSlot
 	{
 		CurrentBuildingType = BuildingType_None;
 		TargetBuildingType = BuildingType_None;
-	}
-};
-
-USTRUCT(BlueprintType)
-struct FShipAttackLineData
-{
-	GENERATED_BODY()
-
-	UPROPERTY(VisibleAnywhere)
-	FPlayerData Player;
-	UPROPERTY(VisibleAnywhere)
-	int FromPlanetIndex;
-	UPROPERTY(VisibleAnywhere)
-	int ShipAmount;
-	UPROPERTY(VisibleAnywhere)
-	float Progress;
-	
-	FShipAttackLineData()
-	{
-		Player = {};
-		FromPlanetIndex = 0;
-		ShipAmount = 0;
-		Progress = 0.f;
-	}
-
-	FShipAttackLineData(const FPlayerData& InPlayer, const int InFromPlanetIndex, const int InShipAmount)
-	{
-		Player = InPlayer;
-		FromPlanetIndex = InFromPlanetIndex;
-		ShipAmount= InShipAmount;
-		Progress = 0.f;
 	}
 };
 
@@ -129,6 +99,7 @@ public:
 	void UpdateBuilding(AStellarPlayerController* Player, const int BuildingSlotIndex, const EBuildingType TargetBuildingType);
 	void UpdateProductionDistribution(float NewDistribution);
 	void AddIncomingAttackLine(const FPlayerData& InPlayer, const int InFromPlanetIndex, const int InShipAmount);
+	void RemoveIncomingAttackLine(const FShipAttackLineData& AttackLineData);
 	
 	int GetGeneratedGoldAmount() const;
 	float GetGeneratedTechXPAmount() const;
