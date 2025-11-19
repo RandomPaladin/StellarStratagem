@@ -99,6 +99,11 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_IncomingAttackLines)
 	TArray<FShipAttackLineData> IncomingAttackLines;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AShipAttackLine> ShipAttackLineTemplate;
+	UPROPERTY(VisibleAnywhere)
+	TArray<AShipAttackLine*> ShipAttackLines;
+
 	//Art
 	UPROPERTY(EditAnywhere)
 	TArray<UStaticMesh*> PlanetMeshes;
@@ -130,6 +135,11 @@ public:
 	float GenerateShips();
 	void ResolveBuildingPlans(OUT TArray<TTuple<bool, EBuildingType>>& Results); //bool: If building was built or destroyed, BuildingType: Building type that was built or destroyed
 	void ResolveShipMovement();
+
+	AShipAttackLine* CreateAttackLine();
+	void RemoveAttackLine(AShipAttackLine* AttackLine);
+	UFUNCTION(BlueprintCallable)
+	void CancelShipAttackLine(AShipAttackLine* AttackLine);
 	
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -158,6 +168,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	TArray<FShipAttackLineData> GetIncomingAttackLines() const { return IncomingAttackLines; }
 
+	AShipAttackLine* GetShipAttackLineToPlanet(const APlanet* TargetPlanet) const;
 	int GetDistanceToPlanet(const APlanet* OtherPlanet) const;
 	
 	//Delegates

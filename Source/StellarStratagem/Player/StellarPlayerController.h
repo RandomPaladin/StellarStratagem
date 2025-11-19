@@ -100,13 +100,9 @@ protected:
 	APlanet* InitiallyPressedPlanet;
 	UPROPERTY()
 	APlanet* SelectedPlanet;
-
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<AShipAttackLine> ShipAttackLineTemplate;
+	
 	UPROPERTY(VisibleAnywhere)
 	AShipAttackLine* CurrentShipAttackLine;
-	UPROPERTY(VisibleAnywhere)
-	TArray<AShipAttackLine*> ShipAttackLines;
 
 private:
 	//Replication funcs
@@ -155,9 +151,6 @@ public:
 	void AddGold(int Gold);
 	void RemoveGold(int Gold);
 	void AddTechXP(float Xp);
-
-	UFUNCTION(BlueprintCallable)
-	void CancelShipAttackLine(AShipAttackLine* AttackLine);
 
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)

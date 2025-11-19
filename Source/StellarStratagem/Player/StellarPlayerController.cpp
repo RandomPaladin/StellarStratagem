@@ -135,17 +135,6 @@ void AStellarPlayerController::AddTechXP(const float Xp)
 	TechLevel += Xp;
 }
 
-void AStellarPlayerController::CancelShipAttackLine(AShipAttackLine* AttackLine)
-{
-	//Ensure attack line is owned by this player
-	if(!ShipAttackLines.Contains(AttackLine))
-		return;
-
-	//Destroy attack line
-	ShipAttackLines.Remove(AttackLine);
-	AttackLine->Destroy();
-}
-
 #pragma endregion
 
 #pragma region Actions
@@ -236,10 +225,8 @@ void AStellarPlayerController::OnPressMoved(const FVector& Loc)
 				//Create attack line if dragging from owned planet with enough ships
 				if(InitiallyPressedPlanet->IsOwnedByPlayer(PlayerData) && InitiallyPressedPlanet->GetShipAmount() >= 1.f)
 				{
-					AShipAttackLine* AttackLine = GetWorld()->SpawnActor<AShipAttackLine>(ShipAttackLineTemplate, FVector::ZeroVector, FRotator::ZeroRotator);
+					AShipAttackLine* AttackLine = InitiallyPressedPlanet->CreateAttackLine();
 					CurrentShipAttackLine = AttackLine;
-					AttackLine->SetFromLoc(InitiallyPressedPlanet->GetActorLocation());
-					ShipAttackLines.Add(AttackLine);
 				}
 			}
 		}
@@ -271,12 +258,11 @@ void AStellarPlayerController::OnPressReleased(const FVector& Loc)
 			if(ReleasedOnPlanet && !ReleasedOnPlanet->IsOwnedByPlayer(PlayerData))
 			{
 				//If an attack line between these planets already exists, use that one instead
-				AShipAttackLine** ExistingAttackLinePtr = ShipAttackLines.FindByPredicate([this, ReleasedOnPlanet](const AShipAttackLine* AttackLine) { return AttackLine->GetFromPlanet() == InitiallyPressedPlanet && AttackLine->GetTargetPlanet() == ReleasedOnPlanet; });
-				if(ExistingAttackLinePtr)
+				AShipAttackLine* ExistingAttackLine = InitiallyPressedPlanet->GetShipAttackLineToPlanet(ReleasedOnPlanet);
+				if(ExistingAttackLine)
 				{
-					ShipAttackLines.Remove(CurrentShipAttackLine);
-					CurrentShipAttackLine->Destroy();
-					CurrentShipAttackLine = *ExistingAttackLinePtr;
+					InitiallyPressedPlanet->RemoveAttackLine(CurrentShipAttackLine);
+					CurrentShipAttackLine = ExistingAttackLine;
 				}
 				else //No existing attack line, setup this one
 					CurrentShipAttackLine->SetupAttackLine(this, InitiallyPressedPlanet, ReleasedOnPlanet);
@@ -284,10 +270,7 @@ void AStellarPlayerController::OnPressReleased(const FVector& Loc)
 				OnShipAttackLineCreated.Broadcast(CurrentShipAttackLine);
 			}
 			else //Destroy attack line if not released on an enemy planet
-			{
-				ShipAttackLines.Remove(CurrentShipAttackLine);
-				CurrentShipAttackLine->Destroy();
-			}
+				InitiallyPressedPlanet->RemoveAttackLine(CurrentShipAttackLine);
 
 			CurrentShipAttackLine = nullptr;
 		}

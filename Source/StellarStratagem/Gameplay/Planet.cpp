@@ -1,5 +1,6 @@
 #include "Planet.h"
 #include "GameManager.h"
+#include "ShipAttackLine.h"
 #include "Engine/DataTable.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -231,6 +232,40 @@ void APlanet::ResolveShipMovement()
 		const float NewProgress = IncomingAttackLine.Progress + ((float)ShipStepDist / (float)TotalDist);
 		IncomingAttackLine.Progress = FMath::Clamp(NewProgress, 0.f, 1.f);
 	}
+}
+
+AShipAttackLine* APlanet::CreateAttackLine()
+{
+	AShipAttackLine* AttackLine = GetWorld()->SpawnActor<AShipAttackLine>(ShipAttackLineTemplate, FVector::ZeroVector, FRotator::ZeroRotator);
+	AttackLine->SetFromLoc(GetActorLocation());
+	ShipAttackLines.Add(AttackLine);
+	return AttackLine;
+}
+
+void APlanet::RemoveAttackLine(AShipAttackLine* AttackLine)
+{
+	ShipAttackLines.Remove(AttackLine);
+	AttackLine->Destroy();
+}
+
+void APlanet::CancelShipAttackLine(AShipAttackLine* AttackLine)
+{
+	//Ensure attack line is owned by this player
+	if(!ShipAttackLines.Contains(AttackLine))
+		return;
+
+	//Destroy attack line
+	ShipAttackLines.Remove(AttackLine);
+	AttackLine->Destroy();
+}
+
+AShipAttackLine* APlanet::GetShipAttackLineToPlanet(const APlanet* TargetPlanet) const
+{
+	AShipAttackLine* const* AttackLinePtr = ShipAttackLines.FindByPredicate([TargetPlanet](const AShipAttackLine* AttackLine) { return AttackLine->GetTargetPlanet() == TargetPlanet; });
+	if(!AttackLinePtr)
+		return nullptr;
+
+	return *AttackLinePtr;
 }
 
 int APlanet::GetDistanceToPlanet(const APlanet* OtherPlanet) const
