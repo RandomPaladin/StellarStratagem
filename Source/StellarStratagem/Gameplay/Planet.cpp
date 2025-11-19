@@ -227,6 +227,10 @@ void APlanet::ResolveShipMovement()
 {
 	for(FShipAttackLineData& IncomingAttackLine : IncomingAttackLines)
 	{
+		//If ships are just leaving the planet, decrement ship amount
+		if(FMath::IsNearlyZero(IncomingAttackLine.Progress))
+			GameManager->GetPlanets()[IncomingAttackLine.FromPlanetIndex]->ShipAmount -= (float)IncomingAttackLine.ShipAmount;
+		
 		//Calculate ship travel distance including player tech level
 		const int ShipMaxDist = ShipData->DefaultShipMoveDistance + GameManager->GetPlayerControllerByPlayerData(IncomingAttackLine.Player)->GetTechLevel();
 		const int ShipStepDist = ShipMaxDist / ShipData->MoveDistancePerTurnDivisor;
