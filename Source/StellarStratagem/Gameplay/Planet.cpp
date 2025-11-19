@@ -244,6 +244,16 @@ void APlanet::ResolveShipMovement()
 	}
 }
 
+void APlanet::RemoveShipsDirectly(const float InShipAmount)
+{
+	ShipAmount -= InShipAmount;
+}
+
+void APlanet::AddShipsDirectly(const float InShipAmount)
+{
+	ShipAmount += InShipAmount;
+}
+
 int APlanet::GetAvailableShipAmount() const
 {
 	float UsedShips = 0.f;

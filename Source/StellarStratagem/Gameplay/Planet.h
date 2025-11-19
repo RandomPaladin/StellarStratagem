@@ -101,6 +101,8 @@ public:
 	float GenerateShips();
 	void ResolveBuildingPlans(OUT TArray<TTuple<bool, EBuildingType>>& Results); //bool: If building was built or destroyed, BuildingType: Building type that was built or destroyed
 	void ResolveShipMovement();
+	void RemoveShipsDirectly(float InShipAmount);
+	void AddShipsDirectly(float InShipAmount); //NOTE: Do not use this for generating ship amount on turn rollover
 	
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)
