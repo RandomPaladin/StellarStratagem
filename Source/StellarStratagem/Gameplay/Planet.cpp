@@ -1,5 +1,7 @@
 #include "Planet.h"
 #include "GameManager.h"
+#include "ShipAttackLine.h"
+#include "ShipAttackLineData.h"
 #include "Engine/DataTable.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -144,6 +146,11 @@ void APlanet::AddIncomingAttackLine(const FPlayerData& InPlayer, const int InFro
 		IncomingAttackLines.Add({InPlayer, InFromPlanetIndex, InShipAmount});
 }
 
+void APlanet::RemoveIncomingAttackLine(const FShipAttackLineData& AttackLineData)
+{
+	IncomingAttackLines.Remove(AttackLineData);
+}
+
 #pragma region Replication Funcs
 
 void APlanet::OnRep_BuildingSlots() const
@@ -220,6 +227,10 @@ void APlanet::ResolveShipMovement()
 {
 	for(FShipAttackLineData& IncomingAttackLine : IncomingAttackLines)
 	{
+		//If ships are just leaving the planet, decrement ship amount
+		if(FMath::IsNearlyZero(IncomingAttackLine.Progress))
+			GameManager->GetPlanets()[IncomingAttackLine.FromPlanetIndex]->ShipAmount -= (float)IncomingAttackLine.ShipAmount;
+		
 		//Calculate ship travel distance including player tech level
 		const int ShipMaxDist = ShipData->DefaultShipMoveDistance + GameManager->GetPlayerControllerByPlayerData(IncomingAttackLine.Player)->GetTechLevel();
 		const int ShipStepDist = ShipMaxDist / ShipData->MoveDistancePerTurnDivisor;
@@ -231,6 +242,22 @@ void APlanet::ResolveShipMovement()
 		const float NewProgress = IncomingAttackLine.Progress + ((float)ShipStepDist / (float)TotalDist);
 		IncomingAttackLine.Progress = FMath::Clamp(NewProgress, 0.f, 1.f);
 	}
+}
+
+int APlanet::GetAvailableShipAmount() const
+{
+	float UsedShips = 0.f;
+	for (const APlanet* Planet : GameManager->GetPlanets())
+	{
+		const FShipAttackLineData* OutgoingAttackLinePtr = Planet->GetIncomingAttackLines().FindByPredicate([this](const FShipAttackLineData& AttackLineData) { return AttackLineData.FromPlanetIndex == PlanetIndex; });
+		if(!OutgoingAttackLinePtr)
+			continue;
+
+		const FShipAttackLineData& ExistingLine = *OutgoingAttackLinePtr;
+		UsedShips += ExistingLine.ShipAmount;
+	}
+	
+	return FMath::FloorToInt(ShipAmount - UsedShips);
 }
 
 int APlanet::GetDistanceToPlanet(const APlanet* OtherPlanet) const

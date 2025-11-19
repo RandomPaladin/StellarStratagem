@@ -11,6 +11,7 @@ class AServerManager;
 class AStellarPlayerController;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameStateChanged, bool, Started);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlanetListUpdated);
 
 UENUM(BlueprintType)
 enum ERoundResolutionResultType
@@ -162,4 +163,6 @@ public:
 	FOnGameStateChanged OnGameStateUpdated;
 	UPROPERTY(BlueprintAssignable)
 	FNoParamDelegate OnPlayersResolutionResultsUpdated;
+	UPROPERTY(BlueprintAssignable)
+	FOnPlanetListUpdated OnPlanetListUpdated;
 };

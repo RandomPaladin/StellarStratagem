@@ -1,56 +1,23 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PlayerData.h"
 #include "GameFramework/PlayerController.h"
 #include "StellarStratagem/Actions/ActionBase.h"
 #include "StellarPlayerController.generated.h"
 
+class AShipAttackLineManager;
 class AShipAttackLine;
 class APlanet;
 class AGameManager;
 class USpringArmComponent;
 class AServerManager;
+struct FActionData;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlanetSelectedDelegate, APlanet*, Planet);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMessageReceivedDelegate, FString, Message);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGoldUpdatedDelegate, int, NewGoldAmount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnShipAttackLineCreatedDelegate, AShipAttackLine*, ShipAttackLine);
-
-USTRUCT(BlueprintType)
-struct FPlayerData
-{
-	GENERATED_BODY()
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	FString Username;
-	
-	FPlayerData()
-	{
-		Username = "";
-	}
-
-	FPlayerData(FString InUsername)
-	{
-		Username = InUsername;
-	}
-
-	bool IsValid() const { return !Username.IsEmpty(); }
-	
-	bool operator ==(const FPlayerData& Other) const
-	{
-		return Username == Other.Username;
-	}
-
-	bool operator !=(const FPlayerData& Other) const
-	{
-		return Username != Other.Username;
-	}
-};
-
-FORCEINLINE uint32 GetTypeHash(const FPlayerData& PlayerData)
-{
-	return GetTypeHash(PlayerData.Username);
-}
 
 UCLASS()
 class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
@@ -70,6 +37,9 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 
 	UPROPERTY()
 	AGameManager* GameManager;
+
+	UPROPERTY(VisibleAnywhere)
+	AShipAttackLineManager* ShipAttackLineManager;
 
 	//Player vars
 	UPROPERTY(EditAnywhere)
@@ -100,13 +70,9 @@ protected:
 	APlanet* InitiallyPressedPlanet;
 	UPROPERTY()
 	APlanet* SelectedPlanet;
-
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<AShipAttackLine> ShipAttackLineTemplate;
+	
 	UPROPERTY(VisibleAnywhere)
 	AShipAttackLine* CurrentShipAttackLine;
-	UPROPERTY(VisibleAnywhere)
-	TArray<AShipAttackLine*> ShipAttackLines;
 
 private:
 	//Replication funcs
@@ -124,8 +90,10 @@ private:
 	void TryStartGame_Server();
 
 	//Actions
+public:
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void SendAction_Server(const FActionData& ActionData);
+private:
 	UFUNCTION(BlueprintCallable, Client, Reliable)
 	void ReceiveActionResult_Client(const FActionResult& ActionResult);
 	
@@ -135,6 +103,7 @@ private:
 	UFUNCTION(BlueprintCallable)
 	void GoToMainMenu();
 	AGameManager* GetGameManager();
+	AShipAttackLineManager* GetShipAttackLineManager();
 	FVector ScreenToWorldLoc(const FVector& ScreenLoc) const;
 	FVector ScreenToWorldDelta(const FVector& ScreenDelta) const;
 	APlanet* GetHoveredPlanet(const FVector& ScreenLoc);
@@ -155,9 +124,6 @@ public:
 	void AddGold(int Gold);
 	void RemoveGold(int Gold);
 	void AddTechXP(float Xp);
-
-	UFUNCTION(BlueprintCallable)
-	void CancelShipAttackLine(AShipAttackLine* AttackLine);
 
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)

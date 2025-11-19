@@ -114,6 +114,7 @@ void AGameManager::StartGame()
 		APlanet* SpawnedPlanet = GetWorld()->SpawnActor<APlanet>(PlanetTemplate, SpawnLoc, SpawnRot);
 		SpawnedPlanet->Setup(this, i);
 		Planets.Add(SpawnedPlanet);
+		OnPlanetListUpdated.Broadcast();
 	}
 	
 	//Grant a starting planet to each player
@@ -302,6 +303,22 @@ void AGameManager::GoToNextRound()
 	}
 
 	//Resolve combat
+	for (APlanet* Planet : Planets)
+	{
+		for (int i = Planet->GetIncomingAttackLines().Num() - 1; i > -1; i--)
+		{
+			if(!FMath::IsNearlyEqual(Planet->GetIncomingAttackLines()[i].Progress, 1.f))
+				continue;
+			
+			
+
+			//Remove attack line
+			Planet->RemoveIncomingAttackLine(Planet->GetIncomingAttackLines()[i]);
+			
+			// const int OwningPlayerIndex = GetIndexOfPlayersResolutionResults(IncomingAttackLine.Player);
+			// NewResults[OwningPlayerIndex].Results.Add({RoundResolutionResultType_Resources, ResultString});
+		}
+	}
 	//TODO
 	
 	//Send result to clients
@@ -317,6 +334,7 @@ void AGameManager::RegisterPlanet(APlanet* Planet)
 	}
 	
 	Planets.AddUnique(Planet);
+	OnPlanetListUpdated.Broadcast();
 }
 
 #pragma endregion

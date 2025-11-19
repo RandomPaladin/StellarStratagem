@@ -21,11 +21,20 @@ class STELLARSTRATAGEM_API AShipAttackLine : public AActor
 	UPROPERTY(VisibleAnywhere)
 	APlanet* TargetPlanet;
 
+protected:
+	UPROPERTY(BlueprintReadOnly)
+	FVector FromLoc;
+	UPROPERTY(BlueprintReadOnly)
+	FVector TargetLoc;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	int ShipAmount;
+
 public:
 	AShipAttackLine();
 
-	void SetTargetLoc(const FVector& Loc) const;
-	void SetupAttackLine(AStellarPlayerController* InPlayer, APlanet* InFromPlanet, APlanet* InTargetPlanet);
+	void SetFromLoc(const FVector& Loc);
+	void SetTargetLoc(const FVector& Loc);
+	void SetupAttackLine(AStellarPlayerController* InPlayer, APlanet* InFromPlanet, APlanet* InTargetPlanet, int InShipAmount);
 	
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -34,8 +43,12 @@ public:
 	APlanet* GetFromPlanet() const { return FromPlanet; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	APlanet* GetTargetPlanet() const { return TargetPlanet; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	int GetShipAmount() const { return ShipAmount; }
 
 	//Delegates
+	UPROPERTY(BlueprintAssignable)
+	FOnShipAttackLineLocUpdatedDelegate OnShipAttackLineFromLocUpdated;
 	UPROPERTY(BlueprintAssignable)
 	FOnShipAttackLineLocUpdatedDelegate OnShipAttackLineTargetLocUpdated;
 };

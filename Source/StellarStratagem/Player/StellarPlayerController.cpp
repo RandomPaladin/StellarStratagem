@@ -3,6 +3,7 @@
 #include "Net/UnrealNetwork.h"
 #include "StellarStratagem/Actions/ActionType.h"
 #include "StellarStratagem/Actions/BuildAction.h"
+#include "StellarStratagem/Actions/CancelAttackLineAction.h"
 #include "StellarStratagem/Actions/EndTurnAction.h"
 #include "StellarStratagem/Actions/ProductionDistributionUpdateAction.h"
 #include "StellarStratagem/Actions/SetAttackLineAction.h"
@@ -10,6 +11,7 @@
 #include "StellarStratagem/Gameplay/Planet.h"
 #include "StellarStratagem/Gameplay/ServerManager.h"
 #include "StellarStratagem/Gameplay/ShipAttackLine.h"
+#include "StellarStratagem/Gameplay/ShipAttackLineManager.h"
 
 void AStellarPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -135,17 +137,6 @@ void AStellarPlayerController::AddTechXP(const float Xp)
 	TechLevel += Xp;
 }
 
-void AStellarPlayerController::CancelShipAttackLine(AShipAttackLine* AttackLine)
-{
-	//Ensure attack line is owned by this player
-	if(!ShipAttackLines.Contains(AttackLine))
-		return;
-
-	//Destroy attack line
-	ShipAttackLines.Remove(AttackLine);
-	AttackLine->Destroy();
-}
-
 #pragma endregion
 
 #pragma region Actions
@@ -171,6 +162,9 @@ void AStellarPlayerController::SendAction_Server_Implementation(const FActionDat
 		case ActionType_SetAttackLine:
 			ClassType = USetAttackLineAction::StaticClass();
 			break;
+		case ActionType_CancelAttackLine:
+			ClassType = UCancelAttackLineAction::StaticClass();
+			break;
 		default:
 			UE_LOG(LogTemp, Error, TEXT("ACTION TYPE IS NOT BEING HANDLED"))
 			return;
@@ -187,11 +181,10 @@ void AStellarPlayerController::SendAction_Server_Implementation(const FActionDat
 
 void AStellarPlayerController::ReceiveActionResult_Client_Implementation(const FActionResult& ActionResult)
 {
-	if(ActionResult.Message.IsEmpty())
-		return;
+	UE_LOG(LogTemp, Warning, TEXT("ACTION RESULT: %s, %s"), *((ActionResult.Succeeded) ? FString{"true"} : FString{"false"}), *ActionResult.Message)
 	
-	UE_LOG(LogTemp, Warning, TEXT("RESULT: %s"), *ActionResult.Message)
-	OnMessageReceived.Broadcast(ActionResult.Message);
+	if(!ActionResult.Succeeded && !ActionResult.Message.IsEmpty())
+		OnMessageReceived.Broadcast(ActionResult.Message);
 }
 
 #pragma endregion
@@ -234,11 +227,10 @@ void AStellarPlayerController::OnPressMoved(const FVector& Loc)
 				DraggingFromPlanet = true;
 				
 				//Create attack line if dragging from owned planet with enough ships
-				if(InitiallyPressedPlanet->IsOwnedByPlayer(PlayerData) && InitiallyPressedPlanet->GetShipAmount() >= 1.f)
+				if(InitiallyPressedPlanet->IsOwnedByPlayer(PlayerData) && InitiallyPressedPlanet->GetAvailableShipAmount() >= 1)
 				{
-					AShipAttackLine* AttackLine = GetWorld()->SpawnActor<AShipAttackLine>(ShipAttackLineTemplate, InitiallyPressedPlanet->GetActorLocation(), FRotator::ZeroRotator);
-					CurrentShipAttackLine = AttackLine;
-					ShipAttackLines.Add(AttackLine);
+					CurrentShipAttackLine = GetShipAttackLineManager()->CreateAttackLine();
+					CurrentShipAttackLine->SetFromLoc(InitiallyPressedPlanet->GetActorLocation());
 				}
 			}
 		}
@@ -270,23 +262,19 @@ void AStellarPlayerController::OnPressReleased(const FVector& Loc)
 			if(ReleasedOnPlanet && !ReleasedOnPlanet->IsOwnedByPlayer(PlayerData))
 			{
 				//If an attack line between these planets already exists, use that one instead
-				AShipAttackLine** ExistingAttackLinePtr = ShipAttackLines.FindByPredicate([this, ReleasedOnPlanet](const AShipAttackLine* AttackLine) { return AttackLine->GetFromPlanet() == InitiallyPressedPlanet && AttackLine->GetTargetPlanet() == ReleasedOnPlanet; });
-				if(ExistingAttackLinePtr)
+				AShipAttackLine* ExistingAttackLine = GetShipAttackLineManager()->GetShipAttackLineToPlanet(ReleasedOnPlanet);
+				if(ExistingAttackLine)
 				{
-					ShipAttackLines.Remove(CurrentShipAttackLine);
-					CurrentShipAttackLine->Destroy();
-					CurrentShipAttackLine = *ExistingAttackLinePtr;
+					GetShipAttackLineManager()->RemoveAttackLine(CurrentShipAttackLine);
+					CurrentShipAttackLine = ExistingAttackLine;
 				}
 				else //No existing attack line, setup this one
-					CurrentShipAttackLine->SetupAttackLine(this, InitiallyPressedPlanet, ReleasedOnPlanet);
+					CurrentShipAttackLine->SetupAttackLine(this, InitiallyPressedPlanet, ReleasedOnPlanet, 1);
 				
 				OnShipAttackLineCreated.Broadcast(CurrentShipAttackLine);
 			}
 			else //Destroy attack line if not released on an enemy planet
-			{
-				ShipAttackLines.Remove(CurrentShipAttackLine);
-				CurrentShipAttackLine->Destroy();
-			}
+				GetShipAttackLineManager()->RemoveAttackLine(CurrentShipAttackLine);
 
 			CurrentShipAttackLine = nullptr;
 		}
@@ -314,6 +302,14 @@ AGameManager* AStellarPlayerController::GetGameManager()
 	}
 
 	return GameManager;
+}
+
+AShipAttackLineManager* AStellarPlayerController::GetShipAttackLineManager()
+{
+	if(!ShipAttackLineManager)
+		ShipAttackLineManager = Cast<AShipAttackLineManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AShipAttackLineManager::StaticClass()));
+
+	return ShipAttackLineManager;
 }
 
 FVector AStellarPlayerController::ScreenToWorldLoc(const FVector& ScreenLoc) const
