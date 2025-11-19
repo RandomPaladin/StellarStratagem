@@ -268,6 +268,22 @@ AShipAttackLine* APlanet::GetShipAttackLineToPlanet(const APlanet* TargetPlanet)
 	return *AttackLinePtr;
 }
 
+int APlanet::GetAvailableShipAmount() const
+{
+	float UsedShips = 0.f;
+	for (const APlanet* Planet : GameManager->GetPlanets())
+	{
+		const FShipAttackLineData* OutgoingAttackLinePtr = Planet->GetIncomingAttackLines().FindByPredicate([this](const FShipAttackLineData& AttackLineData) { return AttackLineData.FromPlanetIndex == PlanetIndex; });
+		if(!OutgoingAttackLinePtr)
+			continue;
+
+		const FShipAttackLineData& ExistingLine = *OutgoingAttackLinePtr;
+		UsedShips += ExistingLine.ShipAmount;
+	}
+	
+	return FMath::FloorToInt(ShipAmount - UsedShips);
+}
+
 int APlanet::GetDistanceToPlanet(const APlanet* OtherPlanet) const
 {
 	return FMath::RoundToInt(FVector::Distance(GetActorLocation(), OtherPlanet->GetActorLocation()) / PlanetData->DistanceBetweenPlanetsToUnrealUnitsMultiplier);

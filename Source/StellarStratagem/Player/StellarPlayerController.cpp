@@ -223,7 +223,7 @@ void AStellarPlayerController::OnPressMoved(const FVector& Loc)
 				DraggingFromPlanet = true;
 				
 				//Create attack line if dragging from owned planet with enough ships
-				if(InitiallyPressedPlanet->IsOwnedByPlayer(PlayerData) && InitiallyPressedPlanet->GetShipAmount() >= 1.f)
+				if(InitiallyPressedPlanet->IsOwnedByPlayer(PlayerData) && InitiallyPressedPlanet->GetAvailableShipAmount() >= 1)
 				{
 					AShipAttackLine* AttackLine = InitiallyPressedPlanet->CreateAttackLine();
 					CurrentShipAttackLine = AttackLine;

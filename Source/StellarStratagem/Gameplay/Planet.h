@@ -164,11 +164,14 @@ public:
 	FBuildingSlot GetBuildingSlot(const int BuildingSlotIndex) const { return BuildingSlots[BuildingSlotIndex]; }
 	int GetBuildingAmount(EBuildingType BuildingType) const { return Algo::CountIf(BuildingSlots, [BuildingType](const FBuildingSlot& BuildingSlot){ return BuildingSlot.CurrentBuildingType == BuildingType; }); }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	float GetShipAmount() const { return ShipAmount; }
-	UFUNCTION(BlueprintCallable, BlueprintPure)
 	TArray<FShipAttackLineData> GetIncomingAttackLines() const { return IncomingAttackLines; }
 
 	AShipAttackLine* GetShipAttackLineToPlanet(const APlanet* TargetPlanet) const;
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	float GetTotalShipAmount() const { return ShipAmount; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	int GetAvailableShipAmount() const;
+
 	int GetDistanceToPlanet(const APlanet* OtherPlanet) const;
 	
 	//Delegates

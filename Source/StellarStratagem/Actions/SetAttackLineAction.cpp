@@ -43,7 +43,7 @@ FActionResult USetAttackLineAction::PerformAction(AGameManager* GameManager, ASt
 	}
 
 	//Ensure from planet has enough ships
-	if(FromPlanet->GetShipAmount() < Data.ShipAmount)
+	if(FromPlanet->GetAvailableShipAmount() < Data.ShipAmount)
 	{
 		UE_LOG(LogTemp, Error, TEXT("NOT ENOUGH SHIPS ON FROM PLANET"))
 		return {false, "You do not have the inputted amount of ships on the starting planet."};
