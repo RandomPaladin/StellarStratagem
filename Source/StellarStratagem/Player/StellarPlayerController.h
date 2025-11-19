@@ -6,6 +6,7 @@
 #include "StellarStratagem/Actions/ActionBase.h"
 #include "StellarPlayerController.generated.h"
 
+class AShipAttackLineManager;
 class AShipAttackLine;
 class APlanet;
 class AGameManager;
@@ -36,6 +37,9 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 
 	UPROPERTY()
 	AGameManager* GameManager;
+
+	UPROPERTY(VisibleAnywhere)
+	AShipAttackLineManager* ShipAttackLineManager;
 
 	//Player vars
 	UPROPERTY(EditAnywhere)
@@ -99,6 +103,7 @@ private:
 	UFUNCTION(BlueprintCallable)
 	void GoToMainMenu();
 	AGameManager* GetGameManager();
+	AShipAttackLineManager* GetShipAttackLineManager();
 	FVector ScreenToWorldLoc(const FVector& ScreenLoc) const;
 	FVector ScreenToWorldDelta(const FVector& ScreenDelta) const;
 	APlanet* GetHoveredPlanet(const FVector& ScreenLoc);

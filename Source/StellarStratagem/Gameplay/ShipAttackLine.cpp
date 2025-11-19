@@ -18,10 +18,13 @@ void AShipAttackLine::SetTargetLoc(const FVector& Loc)
 	OnShipAttackLineTargetLocUpdated.Broadcast(Loc);
 }
 
-void AShipAttackLine::SetupAttackLine(AStellarPlayerController* InPlayer, APlanet* InFromPlanet, APlanet* InTargetPlanet)
+void AShipAttackLine::SetupAttackLine(AStellarPlayerController* InPlayer, APlanet* InFromPlanet, APlanet* InTargetPlanet, const int InShipAmount)
 {
 	Player = InPlayer;
 	FromPlanet = InFromPlanet;
 	TargetPlanet = InTargetPlanet;
+	ShipAmount = InShipAmount;
+	
+	SetFromLoc(FromPlanet->GetActorLocation());
 	SetTargetLoc(TargetPlanet->GetActorLocation());
 }

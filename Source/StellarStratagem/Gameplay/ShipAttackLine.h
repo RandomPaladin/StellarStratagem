@@ -34,7 +34,7 @@ public:
 
 	void SetFromLoc(const FVector& Loc);
 	void SetTargetLoc(const FVector& Loc);
-	void SetupAttackLine(AStellarPlayerController* InPlayer, APlanet* InFromPlanet, APlanet* InTargetPlanet);
+	void SetupAttackLine(AStellarPlayerController* InPlayer, APlanet* InFromPlanet, APlanet* InTargetPlanet, int InShipAmount);
 	
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)

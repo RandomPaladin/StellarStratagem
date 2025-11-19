@@ -244,46 +244,6 @@ void APlanet::ResolveShipMovement()
 	}
 }
 
-AShipAttackLine* APlanet::CreateAttackLine()
-{
-	AShipAttackLine* AttackLine = GetWorld()->SpawnActor<AShipAttackLine>(ShipAttackLineTemplate, FVector::ZeroVector, FRotator::ZeroRotator);
-	AttackLine->SetFromLoc(GetActorLocation());
-	ShipAttackLines.Add(AttackLine);
-	return AttackLine;
-}
-
-void APlanet::RemoveAttackLine(AShipAttackLine* AttackLine)
-{
-	ShipAttackLines.Remove(AttackLine);
-	AttackLine->Destroy();
-}
-
-void APlanet::CancelShipAttackLine(AShipAttackLine* AttackLine)
-{
-	if(!ShipAttackLines.Contains(AttackLine))
-		return;
-
-	//Send cancel ship line action to server
-	FActionData CancelAttackLineAction = {};
-	CancelAttackLineAction.ActionType = ActionType_CancelAttackLine;
-	CancelAttackLineAction.ShipAttackLine = FShipAttackLineData{AttackLine->GetOwningPlayer()->GetPlayerData(), AttackLine->GetFromPlanet()->GetPlanetIndex(), AttackLine->GetShipAmount()};
-	CancelAttackLineAction.IntValue = AttackLine->GetTargetPlanet()->GetPlanetIndex();
-	AttackLine->GetOwningPlayer()->SendAction_Server(CancelAttackLineAction);
-
-	//Remove line
-	ShipAttackLines.Remove(AttackLine);
-	AttackLine->Destroy();
-}
-
-AShipAttackLine* APlanet::GetShipAttackLineToPlanet(const APlanet* TargetPlanet) const
-{
-	AShipAttackLine* const* AttackLinePtr = ShipAttackLines.FindByPredicate([TargetPlanet](const AShipAttackLine* AttackLine) { return AttackLine->GetTargetPlanet() == TargetPlanet; });
-	if(!AttackLinePtr)
-		return nullptr;
-
-	return *AttackLinePtr;
-}
-
 int APlanet::GetAvailableShipAmount() const
 {
 	float UsedShips = 0.f;

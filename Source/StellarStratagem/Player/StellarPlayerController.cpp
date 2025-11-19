@@ -11,6 +11,7 @@
 #include "StellarStratagem/Gameplay/Planet.h"
 #include "StellarStratagem/Gameplay/ServerManager.h"
 #include "StellarStratagem/Gameplay/ShipAttackLine.h"
+#include "StellarStratagem/Gameplay/ShipAttackLineManager.h"
 
 void AStellarPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -228,8 +229,8 @@ void AStellarPlayerController::OnPressMoved(const FVector& Loc)
 				//Create attack line if dragging from owned planet with enough ships
 				if(InitiallyPressedPlanet->IsOwnedByPlayer(PlayerData) && InitiallyPressedPlanet->GetAvailableShipAmount() >= 1)
 				{
-					AShipAttackLine* AttackLine = InitiallyPressedPlanet->CreateAttackLine();
-					CurrentShipAttackLine = AttackLine;
+					CurrentShipAttackLine = GetShipAttackLineManager()->CreateAttackLine();
+					CurrentShipAttackLine->SetFromLoc(InitiallyPressedPlanet->GetActorLocation());
 				}
 			}
 		}
@@ -261,19 +262,19 @@ void AStellarPlayerController::OnPressReleased(const FVector& Loc)
 			if(ReleasedOnPlanet && !ReleasedOnPlanet->IsOwnedByPlayer(PlayerData))
 			{
 				//If an attack line between these planets already exists, use that one instead
-				AShipAttackLine* ExistingAttackLine = InitiallyPressedPlanet->GetShipAttackLineToPlanet(ReleasedOnPlanet);
+				AShipAttackLine* ExistingAttackLine = GetShipAttackLineManager()->GetShipAttackLineToPlanet(ReleasedOnPlanet);
 				if(ExistingAttackLine)
 				{
-					InitiallyPressedPlanet->RemoveAttackLine(CurrentShipAttackLine);
+					GetShipAttackLineManager()->RemoveAttackLine(CurrentShipAttackLine);
 					CurrentShipAttackLine = ExistingAttackLine;
 				}
 				else //No existing attack line, setup this one
-					CurrentShipAttackLine->SetupAttackLine(this, InitiallyPressedPlanet, ReleasedOnPlanet);
+					CurrentShipAttackLine->SetupAttackLine(this, InitiallyPressedPlanet, ReleasedOnPlanet, 1);
 				
 				OnShipAttackLineCreated.Broadcast(CurrentShipAttackLine);
 			}
 			else //Destroy attack line if not released on an enemy planet
-				InitiallyPressedPlanet->RemoveAttackLine(CurrentShipAttackLine);
+				GetShipAttackLineManager()->RemoveAttackLine(CurrentShipAttackLine);
 
 			CurrentShipAttackLine = nullptr;
 		}
@@ -301,6 +302,14 @@ AGameManager* AStellarPlayerController::GetGameManager()
 	}
 
 	return GameManager;
+}
+
+AShipAttackLineManager* AStellarPlayerController::GetShipAttackLineManager()
+{
+	if(!ShipAttackLineManager)
+		ShipAttackLineManager = Cast<AShipAttackLineManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AShipAttackLineManager::StaticClass()));
+
+	return ShipAttackLineManager;
 }
 
 FVector AStellarPlayerController::ScreenToWorldLoc(const FVector& ScreenLoc) const

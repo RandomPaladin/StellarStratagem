@@ -114,6 +114,7 @@ void AGameManager::StartGame()
 		APlanet* SpawnedPlanet = GetWorld()->SpawnActor<APlanet>(PlanetTemplate, SpawnLoc, SpawnRot);
 		SpawnedPlanet->Setup(this, i);
 		Planets.Add(SpawnedPlanet);
+		OnPlanetListUpdated.Broadcast();
 	}
 	
 	//Grant a starting planet to each player
@@ -317,6 +318,7 @@ void AGameManager::RegisterPlanet(APlanet* Planet)
 	}
 	
 	Planets.AddUnique(Planet);
+	OnPlanetListUpdated.Broadcast();
 }
 
 #pragma endregion
