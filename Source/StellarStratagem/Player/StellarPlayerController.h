@@ -86,8 +86,10 @@ private:
 	void TryStartGame_Server();
 
 	//Actions
+public:
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void SendAction_Server(const FActionData& ActionData);
+private:
 	UFUNCTION(BlueprintCallable, Client, Reliable)
 	void ReceiveActionResult_Client(const FActionResult& ActionResult);
 	

@@ -26,6 +26,8 @@ protected:
 	FVector FromLoc;
 	UPROPERTY(BlueprintReadOnly)
 	FVector TargetLoc;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	int ShipAmount;
 
 public:
 	AShipAttackLine();
@@ -41,6 +43,8 @@ public:
 	APlanet* GetFromPlanet() const { return FromPlanet; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	APlanet* GetTargetPlanet() const { return TargetPlanet; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	int GetShipAmount() const { return ShipAmount; }
 
 	//Delegates
 	UPROPERTY(BlueprintAssignable)

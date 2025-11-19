@@ -1,6 +1,7 @@
 #include "Planet.h"
 #include "GameManager.h"
 #include "ShipAttackLine.h"
+#include "ShipAttackLineData.h"
 #include "Engine/DataTable.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -145,6 +146,11 @@ void APlanet::AddIncomingAttackLine(const FPlayerData& InPlayer, const int InFro
 		IncomingAttackLines.Add({InPlayer, InFromPlanetIndex, InShipAmount});
 }
 
+void APlanet::RemoveIncomingAttackLine(const FShipAttackLineData& AttackLineData)
+{
+	IncomingAttackLines.Remove(AttackLineData);
+}
+
 #pragma region Replication Funcs
 
 void APlanet::OnRep_BuildingSlots() const
@@ -250,11 +256,17 @@ void APlanet::RemoveAttackLine(AShipAttackLine* AttackLine)
 
 void APlanet::CancelShipAttackLine(AShipAttackLine* AttackLine)
 {
-	//Ensure attack line is owned by this player
 	if(!ShipAttackLines.Contains(AttackLine))
 		return;
 
-	//Destroy attack line
+	//Send cancel ship line action to server
+	FActionData CancelAttackLineAction = {};
+	CancelAttackLineAction.ActionType = ActionType_CancelAttackLine;
+	CancelAttackLineAction.ShipAttackLine = FShipAttackLineData{AttackLine->GetOwningPlayer()->GetPlayerData(), AttackLine->GetFromPlanet()->GetPlanetIndex(), AttackLine->GetShipAmount()};
+	CancelAttackLineAction.IntValue = AttackLine->GetTargetPlanet()->GetPlanetIndex();
+	AttackLine->GetOwningPlayer()->SendAction_Server(CancelAttackLineAction);
+
+	//Remove line
 	ShipAttackLines.Remove(AttackLine);
 	AttackLine->Destroy();
 }

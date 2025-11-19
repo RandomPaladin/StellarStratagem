@@ -3,6 +3,7 @@
 #include "Net/UnrealNetwork.h"
 #include "StellarStratagem/Actions/ActionType.h"
 #include "StellarStratagem/Actions/BuildAction.h"
+#include "StellarStratagem/Actions/CancelAttackLineAction.h"
 #include "StellarStratagem/Actions/EndTurnAction.h"
 #include "StellarStratagem/Actions/ProductionDistributionUpdateAction.h"
 #include "StellarStratagem/Actions/SetAttackLineAction.h"
@@ -159,6 +160,9 @@ void AStellarPlayerController::SendAction_Server_Implementation(const FActionDat
 			break;
 		case ActionType_SetAttackLine:
 			ClassType = USetAttackLineAction::StaticClass();
+			break;
+		case ActionType_CancelAttackLine:
+			ClassType = UCancelAttackLineAction::StaticClass();
 			break;
 		default:
 			UE_LOG(LogTemp, Error, TEXT("ACTION TYPE IS NOT BEING HANDLED"))
