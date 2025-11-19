@@ -180,11 +180,10 @@ void AStellarPlayerController::SendAction_Server_Implementation(const FActionDat
 
 void AStellarPlayerController::ReceiveActionResult_Client_Implementation(const FActionResult& ActionResult)
 {
-	if(ActionResult.Message.IsEmpty())
-		return;
+	UE_LOG(LogTemp, Warning, TEXT("ACTION RESULT: %s, %s"), *((ActionResult.Succeeded) ? FString{"true"} : FString{"false"}), *ActionResult.Message)
 	
-	UE_LOG(LogTemp, Warning, TEXT("RESULT: %s"), *ActionResult.Message)
-	OnMessageReceived.Broadcast(ActionResult.Message);
+	if(!ActionResult.Succeeded && !ActionResult.Message.IsEmpty())
+		OnMessageReceived.Broadcast(ActionResult.Message);
 }
 
 #pragma endregion
