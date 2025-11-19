@@ -181,7 +181,7 @@ void AStellarPlayerController::SendAction_Server_Implementation(const FActionDat
 
 void AStellarPlayerController::ReceiveActionResult_Client_Implementation(const FActionResult& ActionResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ACTION RESULT: %s, %s"), *((ActionResult.Succeeded) ? FString{"true"} : FString{"false"}), *ActionResult.Message)
+	UE_LOG(LogTemp, Warning, TEXT("ACTION RESULT: %s %s"), *((ActionResult.Succeeded) ? FString{"true"} : FString{"false"}), *ActionResult.Message)
 	
 	if(!ActionResult.Succeeded && !ActionResult.Message.IsEmpty())
 		OnMessageReceived.Broadcast(ActionResult.Message);

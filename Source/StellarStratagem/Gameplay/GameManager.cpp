@@ -291,11 +291,11 @@ void AGameManager::GoToNextRound()
 			const int OwningPlayerIndex = GetIndexOfPlayersResolutionResults(IncomingAttackLine.Player);
 			FString ResultString = "";
 			if(FMath::IsNearlyEqual(IncomingAttackLine.Progress, 1.f))
-				ResultString = FString::Printf(TEXT("%d ships have reached planet %s"), IncomingAttackLine.ShipAmount, *Planet->GetPlanetName());
+				ResultString = FString::Printf(TEXT("%d ships have reached planet %s."), IncomingAttackLine.ShipAmount, *Planet->GetPlanetName());
 			else
 			{
 				int Progress = FMath::RoundToInt(IncomingAttackLine.Progress * 100.f);
-				ResultString = FString::Printf(TEXT("%d ships have traveled %d%% of the way from planet %s to planet %s"), IncomingAttackLine.ShipAmount, Progress, *Planets[IncomingAttackLine.FromPlanetIndex]->GetPlanetName(), *Planet->GetPlanetName());
+				ResultString = FString::Printf(TEXT("%d ships have traveled %d%% of the way from planet %s to planet %s."), IncomingAttackLine.ShipAmount, Progress, *Planets[IncomingAttackLine.FromPlanetIndex]->GetPlanetName(), *Planet->GetPlanetName());
 			}
 			
 			NewResults[OwningPlayerIndex].Results.Add({RoundResolutionResultType_Resources, ResultString});
@@ -305,21 +305,85 @@ void AGameManager::GoToNextRound()
 	//Resolve combat
 	for (APlanet* Planet : Planets)
 	{
-		for (int i = Planet->GetIncomingAttackLines().Num() - 1; i > -1; i--)
+		//Get attack lines
+		TArray<FShipAttackLineData> IncomingAttackLines = Planet->GetIncomingAttackLines();
+
+		//Sort attack lines by tech level
+		IncomingAttackLines.Sort([this](const FShipAttackLineData& AttackLine1, const FShipAttackLineData& AttackLine2)
 		{
-			if(!FMath::IsNearlyEqual(Planet->GetIncomingAttackLines()[i].Progress, 1.f))
+			const AStellarPlayerController* Player1 = GetPlayerControllerByPlayerData(AttackLine1.Player);
+			const AStellarPlayerController* Player2 = GetPlayerControllerByPlayerData(AttackLine2.Player);
+			return Player1->GetTechLevel() > Player2->GetTechLevel();
+		});
+
+		UE_LOG(LogTemp, Warning, TEXT("TECH LEVELS =================="))
+		for (int i = 0; i < IncomingAttackLines.Num(); ++i)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("TECH LEVEL %d"), GetPlayerControllerByPlayerData(IncomingAttackLines[i].Player)->GetTechLevel())
+		}
+	
+		for (int i = 0; i < IncomingAttackLines.Num(); i++)
+		{
+			//Ignore attack line if ships haven't reached planet yet
+			if(!FMath::IsNearlyEqual(IncomingAttackLines[i].Progress, 1.f))
 				continue;
+
+			FString ResultString;
+
+			//Targeted planet isn't owned by anyone or is owned by player, just grant it straight up 
+			if(!Planet->IsOwnedByAnyPlayer() || Planet->IsOwnedByPlayer(IncomingAttackLines[i].Player))
+			{
+				Planet->SetOwningPlayer(IncomingAttackLines[i].Player);
+				Planet->AddShipsDirectly(IncomingAttackLines[i].ShipAmount);
+
+				//Construct entry for claim
+				ResultString = FString::Printf(TEXT("Player %s claimed planet %s."), *IncomingAttackLines[i].Player.Username, *Planet->GetPlanetName());
+			}
+			else //Planet is owned by other player, resolve combat until one side runs out of ships
+			{
+				//Get fighting players
+				AStellarPlayerController* AttackingPlayer = GetPlayerControllerByPlayerData(IncomingAttackLines[i].Player);
+				AStellarPlayerController* DefendingPlayer = GetPlayerControllerByPlayerData(Planet->GetOwningPlayer());
+				
+				//Combat
+				while(IncomingAttackLines[i].ShipAmount > 0 && Planet->GetAvailableShipAmount() > 0)
+				{
+					//Roll until the players don't tie
+					int AttackingPlayerRoll = 0;
+					int DefendingPlayerRoll = 0;
+					while(AttackingPlayerRoll == DefendingPlayerRoll)
+					{
+						AttackingPlayerRoll = FMath::RandRange(1, 20) + AttackingPlayer->GetTechLevel();
+						DefendingPlayerRoll = FMath::RandRange(1, 20) + DefendingPlayer->GetTechLevel();
+					}
+
+					//Remove one ship from defeated player 
+					if(AttackingPlayerRoll > DefendingPlayerRoll)
+						Planet->RemoveShipsDirectly(1);
+					else
+						IncomingAttackLines[i].ShipAmount--;
+				}
+
+				//Grant planet to attacker if they won
+				if(IncomingAttackLines[i].ShipAmount > 0)
+				{
+					Planet->SetOwningPlayer(IncomingAttackLines[i].Player);
+					Planet->AddShipsDirectly(IncomingAttackLines[i].ShipAmount);
+				}
+
+				//Construct entry for combat
+				FString CombatResult = IncomingAttackLines[i].ShipAmount > 0 ? "won" : "lost";
+				ResultString = FString::Printf(TEXT("Player %s attacked player %s on planet %s and %s."), *IncomingAttackLines[i].Player.Username, *Planet->GetPlanetName(), *Planet->GetOwningPlayer().Username, *CombatResult);
+			}
 			
-			
+			//Add entry for combat
+			for (int j = 0; j < NewResults.Num(); j++)
+				NewResults[j].Results.Add({RoundResolutionResultType_Combat, ResultString});
 
 			//Remove attack line
-			Planet->RemoveIncomingAttackLine(Planet->GetIncomingAttackLines()[i]);
-			
-			// const int OwningPlayerIndex = GetIndexOfPlayersResolutionResults(IncomingAttackLine.Player);
-			// NewResults[OwningPlayerIndex].Results.Add({RoundResolutionResultType_Resources, ResultString});
+			Planet->RemoveIncomingAttackLine(IncomingAttackLines[i]);
 		}
 	}
-	//TODO
 	
 	//Send result to clients
 	PlayersResolutionResults = NewResults;
