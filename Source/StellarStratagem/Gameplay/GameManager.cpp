@@ -328,8 +328,7 @@ void AGameManager::GoToNextRound()
 			if(!FMath::IsNearlyEqual(IncomingAttackLines[i].Progress, 1.f))
 				continue;
 
-			FString ResultString;
-
+			FRoundResolutionResult CombatResolutionResult;
 			//Targeted planet isn't owned by anyone or is owned by player, just grant it straight up 
 			if(!Planet->IsOwnedByAnyPlayer() || Planet->IsOwnedByPlayer(IncomingAttackLines[i].Player))
 			{
@@ -337,15 +336,20 @@ void AGameManager::GoToNextRound()
 				Planet->AddShipsDirectly(IncomingAttackLines[i].ShipAmount);
 
 				//Construct entry for claim
-				ResultString = FString::Printf(TEXT("Player %s claimed planet %s."), *IncomingAttackLines[i].Player.Username, *Planet->GetPlanetName());
+				CombatResolutionResult = {RoundResolutionResultType_Combat, FString::Printf(TEXT("Player %s claimed planet %s."), *IncomingAttackLines[i].Player.Username, *Planet->GetPlanetName())};
 			}
 			else //Planet is owned by other player, resolve combat until one side runs out of ships
 			{
 				//Get fighting players
-				AStellarPlayerController* AttackingPlayer = GetPlayerControllerByPlayerData(IncomingAttackLines[i].Player);
-				AStellarPlayerController* DefendingPlayer = GetPlayerControllerByPlayerData(Planet->GetOwningPlayer());
+				FPlayerData Attacker = IncomingAttackLines[i].Player;
+				FPlayerData Defender = Planet->GetOwningPlayer();
+				AStellarPlayerController* AttackingPlayer = GetPlayerControllerByPlayerData(Attacker);
+				AStellarPlayerController* DefendingPlayer = GetPlayerControllerByPlayerData(Defender);
 				
 				//Combat
+				int AttackingShips = IncomingAttackLines[i].ShipAmount;
+				int DefendingShips = Planet->GetAvailableShipAmount();
+				TArray<bool> AttackerWonList;
 				while(IncomingAttackLines[i].ShipAmount > 0 && Planet->GetAvailableShipAmount() > 0)
 				{
 					//Roll until the players don't tie
@@ -357,11 +361,13 @@ void AGameManager::GoToNextRound()
 						DefendingPlayerRoll = FMath::RandRange(1, 20) + DefendingPlayer->GetTechLevel();
 					}
 
-					//Remove one ship from defeated player 
-					if(AttackingPlayerRoll > DefendingPlayerRoll)
+					//Remove one ship from defeated player
+					bool AttackerWon = AttackingPlayerRoll > DefendingPlayerRoll;
+					if(AttackerWon)
 						Planet->RemoveShipsDirectly(1);
 					else
 						IncomingAttackLines[i].ShipAmount--;
+					AttackerWonList.Add(AttackerWon);
 				}
 
 				//Grant planet to attacker if they won
@@ -373,12 +379,14 @@ void AGameManager::GoToNextRound()
 
 				//Construct entry for combat
 				FString CombatResult = IncomingAttackLines[i].ShipAmount > 0 ? "won" : "lost";
-				ResultString = FString::Printf(TEXT("Player %s attacked player %s on planet %s and %s."), *IncomingAttackLines[i].Player.Username, *Planet->GetPlanetName(), *Planet->GetOwningPlayer().Username, *CombatResult);
+				FString ResultString = FString::Printf(TEXT("Player %s attacked player %s on planet %s and %s."), *IncomingAttackLines[i].Player.Username, *Planet->GetOwningPlayer().Username, *Planet->GetPlanetName(), *CombatResult);
+				FCombatResult CombatResultInfo = {Attacker, Defender, Planet->GetPlanetIndex(), AttackingShips, DefendingShips, AttackerWonList};
+				CombatResolutionResult = {RoundResolutionResultType_Combat, ResultString, CombatResultInfo};
 			}
 			
 			//Add entry for combat
 			for (int j = 0; j < NewResults.Num(); j++)
-				NewResults[j].Results.Add({RoundResolutionResultType_Combat, ResultString});
+				NewResults[j].Results.Add(CombatResolutionResult);
 
 			//Remove attack line
 			Planet->RemoveIncomingAttackLine(IncomingAttackLines[i]);
