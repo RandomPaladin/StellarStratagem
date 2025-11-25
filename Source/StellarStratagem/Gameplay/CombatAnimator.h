@@ -1,0 +1,36 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameManager.h"
+#include "GameFramework/Actor.h"
+#include "CombatAnimator.generated.h"
+
+UCLASS()
+class STELLARSTRATAGEM_API ACombatAnimator : public AActor
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	AStellarPlayerController* LocalPlayer;
+protected:
+	UPROPERTY(BlueprintReadOnly)
+	AGameManager* GameManager;
+private:
+	TArray<FRoundResolutionResult> Results;
+	int ResultIndex = -1;
+
+	UFUNCTION()
+	void DoCombatAnimations();
+	
+public:
+	ACombatAnimator();
+protected:
+	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void DoCombatAnimation(const FCombatResult& CombatResult);
+	UFUNCTION(BlueprintImplementableEvent)
+	void ToggleUIUsability(bool Usable);
+	UFUNCTION(BlueprintCallable)
+	void IncrementAnimation();
+};

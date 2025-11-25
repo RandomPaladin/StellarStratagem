@@ -12,7 +12,7 @@ AShipAttackLineManager::AShipAttackLineManager()
 void AShipAttackLineManager::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	//Get local player
 	LocalPlayer = Cast<AStellarPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 
@@ -23,6 +23,7 @@ void AShipAttackLineManager::BeginPlay()
 	if(GameManager->HasAuthority())
 		return;
 	
+	//Bind to game manager
 	GameManager->OnPlanetListUpdated.AddDynamic(this, &AShipAttackLineManager::SetupShipAttackLineManager);
 	SetupShipAttackLineManager();
 }
