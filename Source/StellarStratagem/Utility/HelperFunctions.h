@@ -10,4 +10,19 @@ UCLASS()
 class STELLARSTRATAGEM_API UHelperFunctions : public UObject
 {
 	GENERATED_BODY()
+
+public:
+	template<class T, typename Predicate> 
+	static void Where(TArray<T> InArray, OUT TArray<T>& OutArray, Predicate Pred);
 };
+
+template <class T, typename Predicate>
+void UHelperFunctions::Where(TArray<T> InArray, OUT TArray<T>& OutArray, Predicate Pred)
+{
+	OutArray.Empty();
+	for (T Entry : InArray)
+	{
+		if(Pred(Entry))
+			OutArray.Add(Entry);
+	}
+}
