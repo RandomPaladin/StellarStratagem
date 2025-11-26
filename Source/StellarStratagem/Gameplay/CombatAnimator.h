@@ -10,9 +10,9 @@ class STELLARSTRATAGEM_API ACombatAnimator : public AActor
 {
 	GENERATED_BODY()
 
-	UPROPERTY()
-	AStellarPlayerController* LocalPlayer;
 protected:
+	UPROPERTY(BlueprintReadOnly)
+	AStellarPlayerController* LocalPlayer;
 	UPROPERTY(BlueprintReadOnly)
 	AGameManager* GameManager;
 private:

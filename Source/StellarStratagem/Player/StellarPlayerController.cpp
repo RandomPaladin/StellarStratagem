@@ -193,6 +193,9 @@ void AStellarPlayerController::ReceiveActionResult_Client_Implementation(const F
 
 void AStellarPlayerController::OnPress(const FVector& Loc)
 {
+	if(!IsInputOccluded())
+		return;
+	
 	//Initial values
 	StartTouchLoc = Loc;
 	PreviousTouchLoc = StartTouchLoc;
@@ -204,6 +207,9 @@ void AStellarPlayerController::OnPress(const FVector& Loc)
 
 void AStellarPlayerController::OnPressMoved(const FVector& Loc)
 {
+	if(!IsInputOccluded())
+		return;
+	
 	//Record current touch loc
 	CurrentTouchLoc = Loc;
 
@@ -248,6 +254,8 @@ void AStellarPlayerController::OnPressMoved(const FVector& Loc)
 
 void AStellarPlayerController::OnPressReleased(const FVector& Loc)
 {
+	//Allow press release to happen even if input is occluded
+	
 	//No initial planet
 	if(!InitiallyPressedPlanet)
 		return;
@@ -285,6 +293,14 @@ void AStellarPlayerController::OnPressReleased(const FVector& Loc)
 		SelectedPlanet = InitiallyPressedPlanet;
 		OnPlanetSelected.Broadcast(SelectedPlanet);
 	}
+}
+
+void AStellarPlayerController::UpdateInputOcclusion(UObject* Occluder, const bool Occluding)
+{
+	if(Occluding)
+		InputOccluders.AddUnique(Occluder);
+	else
+		InputOccluders.Remove(Occluder);
 }
 
 #pragma endregion

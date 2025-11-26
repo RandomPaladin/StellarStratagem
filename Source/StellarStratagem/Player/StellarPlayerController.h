@@ -74,6 +74,9 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	AShipAttackLine* CurrentShipAttackLine;
 
+	UPROPERTY(VisibleAnywhere)
+	TArray<UObject*> InputOccluders;
+
 private:
 	//Replication funcs
 	UFUNCTION()
@@ -116,8 +119,12 @@ private:
 	UFUNCTION(BlueprintCallable)
 	void OnPressReleased(const FVector& Loc);
 
-	//Public
+	bool IsInputOccluded() const { return InputOccluders.Num() == 0; }
 public:
+	UFUNCTION(BlueprintCallable)
+	void UpdateInputOcclusion(UObject* Occluder, bool Occluding);
+	
+	//Other funcs
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
