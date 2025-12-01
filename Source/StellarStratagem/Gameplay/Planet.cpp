@@ -1,6 +1,5 @@
 #include "Planet.h"
 #include "GameManager.h"
-#include "ShipAttackLine.h"
 #include "ShipAttackLineData.h"
 #include "Engine/DataTable.h"
 #include "Kismet/GameplayStatics.h"
