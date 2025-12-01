@@ -22,6 +22,45 @@ enum ERoundResolutionResultType
 };
 
 USTRUCT(BlueprintType)
+struct FCombatResult
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	FPlayerData Attacker;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	FPlayerData Defender;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	int DefendingPlanetIndex;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	int AttackingShips;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	int DefendingShips;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TArray<bool> AttackerWon;
+
+	FCombatResult()
+	{
+		Attacker = {};
+		Defender = {};
+		DefendingPlanetIndex = 0;
+		AttackingShips = 0;
+		DefendingShips = 0;
+		AttackerWon = {};
+	}
+
+	FCombatResult(const FPlayerData& InAttacker, const FPlayerData& InDefender, const int InDefendingPlanetIndex, const int InAttackingShips, const int InDefendingShips, const TArray<bool>& InAttackerWon)
+	{
+		Attacker = InAttacker;
+		Defender = InDefender;
+		DefendingPlanetIndex = InDefendingPlanetIndex;
+		AttackingShips = InAttackingShips;
+		DefendingShips = InDefendingShips;
+		AttackerWon = InAttackerWon;
+	}
+};
+
+USTRUCT(BlueprintType)
 struct FRoundResolutionResult
 {
 	GENERATED_BODY()
@@ -30,6 +69,8 @@ struct FRoundResolutionResult
 	TEnumAsByte<ERoundResolutionResultType> ResultType;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FString Result;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FCombatResult CombatResult;
 
 	FRoundResolutionResult()
 	{
@@ -41,6 +82,13 @@ struct FRoundResolutionResult
 	{
 		ResultType = InResultType;
 		Result = InResult;
+	}
+	
+	FRoundResolutionResult(const TEnumAsByte<ERoundResolutionResultType> InResultType, FString InResult, const FCombatResult& InCombatResult)
+	{
+		ResultType = InResultType;
+		Result = InResult;
+		CombatResult = InCombatResult;
 	}
 };
 
@@ -151,6 +199,8 @@ public:
 	TArray<APlanet*> GetPlanetsOwnedByPlayer(const FPlayerData& Player);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	APlanet* GetPlanetByName(const FString& InName);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	APlanet* GetPlanetByIndex(const int PlanetIndex) const { return Planets[PlanetIndex]; }
 
 	int GetIndexOfPlayersResolutionResults(const FPlayerData& Player) const { return PlayersResolutionResults.IndexOfByPredicate([Player](const FRoundResolutionResults& Results) { return Results.Player == Player; }); };
 	UFUNCTION(BlueprintCallable, BlueprintPure)
