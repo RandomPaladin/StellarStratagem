@@ -235,7 +235,7 @@ void APlanet::ResolveShipMovement()
 		const int ShipStepDist = ShipMaxDist / ShipData->MoveDistancePerTurnDivisor;
 
 		//Find total distance between from and target planets
-		const int TotalDist = GetDistanceToPlanet(GameManager->GetPlanets()[IncomingAttackLine.FromPlanetIndex]);
+		const int TotalDist = GetDistanceToLocInGameUnits(GameManager->GetPlanets()[IncomingAttackLine.FromPlanetIndex]->GetActorLocation());
 		
 		//Update progress
 		const float NewProgress = IncomingAttackLine.Progress + ((float)ShipStepDist / (float)TotalDist);
@@ -272,7 +272,7 @@ int APlanet::GetAvailableShipAmount() const
 	return FMath::FloorToInt(ShipAmount - (float)UsedShips);
 }
 
-int APlanet::GetDistanceToPlanet(const APlanet* OtherPlanet) const
+int APlanet::GetDistanceToLocInGameUnits(const FVector& Loc) const
 {
-	return FMath::RoundToInt(FVector::Distance(GetActorLocation(), OtherPlanet->GetActorLocation()) / PlanetData->DistanceBetweenPlanetsToUnrealUnitsMultiplier);
+	return FMath::RoundToInt(FVector::Distance(GetActorLocation(), Loc) / PlanetData->DistanceBetweenPlanetsToUnrealUnitsMultiplier);
 }

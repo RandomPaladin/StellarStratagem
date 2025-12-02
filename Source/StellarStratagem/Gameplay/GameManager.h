@@ -6,6 +6,7 @@
 #include "StellarStratagem/Utility/HelperFunctions.h"
 #include "GameManager.generated.h"
 
+class UPlanetGradeData;
 class APlanet;
 class AServerManager;
 class AStellarPlayerController;
@@ -150,10 +151,8 @@ protected:
 	TSubclassOf<APlanet> PlanetTemplate;
 	UPROPERTY(EditAnywhere, Category=Planets)
 	int SpawnPlanetsPerPlayer = 5;
-	UPROPERTY(EditAnywhere, Category=Planets)
-	FVector2D SpawnPlanetXLocRange = {-3000.f, 3000.f};
-	UPROPERTY(EditAnywhere, Category=Planets)
-	FVector2D SpawnPlanetYLocRange = {-3000.f, 3000.f};
+	UPROPERTY(EditAnywhere)
+	UPlanetGradeData* PlanetData;
 	UPROPERTY(EditAnywhere, Category=Planets)
 	FVector2D SpawnPlanetRotRange = {0.f, 359.f};
 	UPROPERTY(VisibleAnywhere, Category=Planets)

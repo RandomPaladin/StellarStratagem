@@ -109,7 +109,29 @@ void AGameManager::StartGame()
 	const int PlanetAmount = GetPlayerAmount() * SpawnPlanetsPerPlayer;
 	for (int i = 0; i < PlanetAmount; i++)
 	{
-		FVector SpawnLoc = {FMath::RandRange(SpawnPlanetXLocRange.X, SpawnPlanetXLocRange.Y), FMath::RandRange(SpawnPlanetYLocRange.X, SpawnPlanetYLocRange.Y), 0.f};
+		FVector SpawnLoc;
+		if(i == 0)
+			SpawnLoc = FVector::ZeroVector;
+		else
+		{
+			FVector NewLoc;
+			bool IntersectingExistingPlanet;
+			int Attempts = 0;
+			do
+			{
+				const float Distance = FMath::RandRange((float)PlanetData->DistanceBetweenPlanetsRange.X, (float)PlanetData->DistanceBetweenPlanetsRange.Y);
+				const float UnrealUnitsDistance = Distance * PlanetData->DistanceBetweenPlanetsToUnrealUnitsMultiplier;
+				const FVector Dir = FRotator::MakeFromEuler({0.f, 0.f, FMath::RandRange(0.f, 359.f)}).Vector();
+				NewLoc = Planets[i - 1]->GetActorLocation() + (Dir * UnrealUnitsDistance);
+				
+				IntersectingExistingPlanet = UHelperFunctions::Any(Planets, [this, NewLoc](const APlanet* Planet){ return Planet->GetDistanceToLocInGameUnits(NewLoc) < PlanetData->DistanceBetweenPlanetsRange.X; });
+				Attempts++;
+			}
+			while (IntersectingExistingPlanet && Attempts < 100);
+			
+			SpawnLoc = NewLoc;
+		}
+		
 		FRotator SpawnRot = {0.f, FMath::RandRange(SpawnPlanetRotRange.X, SpawnPlanetRotRange.Y), 0.f};
 		APlanet* SpawnedPlanet = GetWorld()->SpawnActor<APlanet>(PlanetTemplate, SpawnLoc, SpawnRot);
 		SpawnedPlanet->Setup(this, i);

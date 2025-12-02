@@ -134,7 +134,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int GetAvailableShipAmount() const;
 
-	int GetDistanceToPlanet(const APlanet* OtherPlanet) const;
+	int GetDistanceToLocInGameUnits(const FVector& Loc) const;
 	
 	//Delegates
 	UPROPERTY(BlueprintAssignable)
