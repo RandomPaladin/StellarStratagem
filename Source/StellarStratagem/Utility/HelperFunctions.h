@@ -14,6 +14,9 @@ class STELLARSTRATAGEM_API UHelperFunctions : public UObject
 public:
 	template<class T, typename Predicate> 
 	static void Where(TArray<T> InArray, OUT TArray<T>& OutArray, Predicate Pred);
+
+	template<class T, typename Predicate> 
+	static bool Any(TArray<T> InArray, Predicate Pred);
 };
 
 template <class T, typename Predicate>
@@ -25,4 +28,16 @@ void UHelperFunctions::Where(TArray<T> InArray, OUT TArray<T>& OutArray, Predica
 		if(Pred(Entry))
 			OutArray.Add(Entry);
 	}
+}
+
+template <class T, typename Predicate>
+bool UHelperFunctions::Any(TArray<T> InArray, Predicate Pred)
+{
+	for (T Entry : InArray)
+	{
+		if(Pred(Entry))
+			return true;
+	}
+
+	return false;
 }
