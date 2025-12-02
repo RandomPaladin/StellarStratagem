@@ -149,8 +149,6 @@ protected:
 	//Planets
 	UPROPERTY(EditAnywhere, Category=Planets)
 	TSubclassOf<APlanet> PlanetTemplate;
-	UPROPERTY(EditAnywhere, Category=Planets)
-	int SpawnPlanetsPerPlayer = 5;
 	UPROPERTY(EditAnywhere)
 	UPlanetGradeData* PlanetData;
 	UPROPERTY(EditAnywhere, Category=Planets)

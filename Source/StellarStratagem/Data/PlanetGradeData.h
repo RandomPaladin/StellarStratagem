@@ -59,6 +59,8 @@ public:
 	UPROPERTY(EditAnywhere)
 	float TechXPPercentPerResearchBuildingPerRound = 0.05f;
 	UPROPERTY(EditAnywhere)
+	int SpawnPlanetsPerPlayer = 5;
+	UPROPERTY(EditAnywhere)
 	FIntPoint DistanceBetweenPlanetsRange = FIntPoint{5, 15};
 	UPROPERTY(EditAnywhere)
 	float DistanceBetweenPlanetsToUnrealUnitsMultiplier = 350.f;

@@ -106,7 +106,7 @@ void AGameManager::StartGame()
 	GameStarted = true;
 
 	//Create planets
-	const int PlanetAmount = GetPlayerAmount() * SpawnPlanetsPerPlayer;
+	const int PlanetAmount = GetPlayerAmount() * PlanetData->SpawnPlanetsPerPlayer;
 	for (int i = 0; i < PlanetAmount; i++)
 	{
 		FVector SpawnLoc;
