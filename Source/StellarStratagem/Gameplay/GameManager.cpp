@@ -374,7 +374,7 @@ void AGameManager::GoToNextRound()
 
 				//Construct entry for combat
 				FString CombatResult = IncomingAttackLines[i].ShipAmount > 0 ? "won" : "lost";
-				FString ResultString = FString::Printf(TEXT("Player %s attacked player %s on planet %s and %s."), *IncomingAttackLines[i].Player.Username, *Planet->GetOwningPlayer().Username, *Planet->GetPlanetName(), *CombatResult);
+				FString ResultString = FString::Printf(TEXT("Player %s attacked player %s on planet %s and %s."), *Attacker.Username, *Defender.Username, *Planet->GetPlanetName(), *CombatResult);
 				FCombatResult CombatResultInfo = {Attacker, Defender, Planet->GetPlanetIndex(), AttackingShips, DefendingShips, AttackerWonList};
 				CombatResolutionResult = {RoundResolutionResultType_Combat, ResultString, CombatResultInfo};
 			}
