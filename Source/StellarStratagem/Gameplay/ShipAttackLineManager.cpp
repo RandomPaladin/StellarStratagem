@@ -48,7 +48,8 @@ void AShipAttackLineManager::OnIncomingAttackLinesUpdated()
 	//Create new lines
 	for (APlanet* Planet : GameManager->GetPlanets())
 	{
-		for (const FShipAttackLineData& IncomingAttackLine : Planet->GetIncomingAttackLines())
+		TArray<FShipAttackLineData> IncomingAttackLines = Planet->GetIncomingAttackLines();
+		for (const FShipAttackLineData& IncomingAttackLine : IncomingAttackLines)
 		{
 			//Only show local player's attack lines
 			APlanet* FromPlanet = GameManager->GetPlanets()[IncomingAttackLine.FromPlanetIndex];

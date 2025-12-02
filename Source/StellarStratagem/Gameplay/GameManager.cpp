@@ -286,7 +286,8 @@ void AGameManager::GoToNextRound()
 	for (APlanet* Planet : Planets)
 	{
 		Planet->ResolveShipMovement();
-		for (FShipAttackLineData IncomingAttackLine : Planet->GetIncomingAttackLines())
+		TArray<FShipAttackLineData> IncomingAttackLines = Planet->GetIncomingAttackLines();
+		for (FShipAttackLineData IncomingAttackLine : IncomingAttackLines)
 		{
 			const int OwningPlayerIndex = GetIndexOfPlayersResolutionResults(IncomingAttackLine.Player);
 			FString ResultString = "";

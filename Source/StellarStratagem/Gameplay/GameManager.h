@@ -202,7 +202,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	APlanet* GetPlanetByIndex(const int PlanetIndex) const { return Planets[PlanetIndex]; }
 
-	int GetIndexOfPlayersResolutionResults(const FPlayerData& Player) const { return PlayersResolutionResults.IndexOfByPredicate([Player](const FRoundResolutionResults& Results) { return Results.Player == Player; }); };
+	int GetIndexOfPlayersResolutionResults(const FPlayerData& Player) const { return PlayersResolutionResults.IndexOfByPredicate([Player](const FRoundResolutionResults& Results) { return Results.Player == Player; }); }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FRoundResolutionResults GetPlayerResolutionResults(const FPlayerData& Player) const { return PlayersResolutionResults[GetIndexOfPlayersResolutionResults(Player)]; }
 	
