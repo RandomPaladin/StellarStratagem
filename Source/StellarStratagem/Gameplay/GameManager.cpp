@@ -315,12 +315,6 @@ void AGameManager::GoToNextRound()
 			const AStellarPlayerController* Player2 = GetPlayerControllerByPlayerData(AttackLine2.Player);
 			return Player1->GetTechLevel() > Player2->GetTechLevel();
 		});
-
-		UE_LOG(LogTemp, Warning, TEXT("TECH LEVELS =================="))
-		for (int i = 0; i < IncomingAttackLines.Num(); ++i)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("TECH LEVEL %d"), GetPlayerControllerByPlayerData(IncomingAttackLines[i].Player)->GetTechLevel())
-		}
 	
 		for (int i = 0; i < IncomingAttackLines.Num(); i++)
 		{
