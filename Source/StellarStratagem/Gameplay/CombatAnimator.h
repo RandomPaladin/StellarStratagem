@@ -19,10 +19,10 @@ private:
 	TArray<FRoundResolutionResult> Results;
 	int ResultIndex = -1;
 
-	UFUNCTION()
+public:
+	UFUNCTION(BlueprintCallable)
 	void DoCombatAnimations();
 	
-public:
 	ACombatAnimator();
 protected:
 	virtual void BeginPlay() override;
