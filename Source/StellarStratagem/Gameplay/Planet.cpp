@@ -150,6 +150,11 @@ void APlanet::RemoveIncomingAttackLine(const FShipAttackLineData& AttackLineData
 	IncomingAttackLines.Remove(AttackLineData);
 }
 
+void APlanet::SetNewlyOvertaken(const bool InNewlyOvertaken)
+{
+	NewlyOvertaken = InNewlyOvertaken;
+}
+
 #pragma region Replication Funcs
 
 void APlanet::OnRep_BuildingSlots() const

@@ -187,7 +187,7 @@ void AGameManager::EndTurn(AStellarPlayerController* Player)
 
 void AGameManager::GoToNextRound()
 {
-	UE_LOG(LogTemp, Warning, TEXT("ALL PLAYERS ENDED THEIR TURN, GOING TO NEXT ROUND"))
+	UE_LOG(LogTemp, Log, TEXT("ALL PLAYERS ENDED THEIR TURN, GOING TO NEXT ROUND"))
 	
 	//Increment round
 	Round++;
@@ -200,13 +200,16 @@ void AGameManager::GoToNextRound()
 			PlayersResolutionResults.Add(Player);
 	}
 	
-	TArray<FRoundResolutionResults> NewResults = PlayersResolutionResults;
-
-	//Clear resolution results
-	for (FRoundResolutionResults& PlayerResolutionResult : NewResults)
-		PlayerResolutionResult.Results.Empty();
+	//Create new resolution results
+	TArray<FRoundResolutionResults> NewResults;
+	for(int i = 0; i < PlayersResolutionResults.Num(); i++)
+	{
+		FRoundResolutionResults Result = {PlayersResolutionResults[i].Player};
+		NewResults.Add(Result);
+	}
 
 	//Generate building resources
+	UE_LOG(LogTemp, Log, TEXT("GENERATING BUILDING RESOURCES"))
 	TMap<FPlayerData, int> GeneratedGold;
 	TMap<FPlayerData, float> GeneratedTechXP;
 	for (APlanet* Planet : Planets)
@@ -214,6 +217,13 @@ void AGameManager::GoToNextRound()
 		//Ignore unowned planets
 		if(!Planet->IsOwnedByAnyPlayer())
 			continue;
+
+		//Ignore newly overtaken planets
+		if(Planet->GetNewlyOvertaken())
+		{
+			Planet->SetNewlyOvertaken(false);
+			continue;
+		}
 
 		FPlayerData OwningPlayer = Planet->GetOwningPlayer();
 		
@@ -271,6 +281,7 @@ void AGameManager::GoToNextRound()
 	}
 	
 	//Resolve building plans
+	UE_LOG(LogTemp, Log, TEXT("RESOLVING BUILDING PLANS"))
 	for (APlanet* Planet : Planets)
 	{
 		//Ignore unowned planets
@@ -305,6 +316,7 @@ void AGameManager::GoToNextRound()
 	}
 
 	//Resolve ship movement
+	UE_LOG(LogTemp, Log, TEXT("RESOLVING SHIP MOVEMENT"))
 	for (APlanet* Planet : Planets)
 	{
 		Planet->ResolveShipMovement();
@@ -326,6 +338,7 @@ void AGameManager::GoToNextRound()
 	}
 
 	//Resolve combat
+	UE_LOG(LogTemp, Log, TEXT("RESOLVING COMBAT"))
 	for (APlanet* Planet : Planets)
 	{
 		//Get attack lines
@@ -391,6 +404,7 @@ void AGameManager::GoToNextRound()
 				if(IncomingAttackLines[i].ShipAmount > 0)
 				{
 					Planet->SetOwningPlayer(IncomingAttackLines[i].Player);
+					Planet->SetNewlyOvertaken(true);
 					Planet->AddShipsDirectly(IncomingAttackLines[i].ShipAmount);
 				}
 
@@ -411,6 +425,7 @@ void AGameManager::GoToNextRound()
 	}
 	
 	//Send result to clients
+	UE_LOG(LogTemp, Log, TEXT("SETTING NEW RESOLUTION RESULTS"))
 	PlayersResolutionResults = NewResults;
 }
 

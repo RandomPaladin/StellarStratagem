@@ -69,6 +69,8 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_IncomingAttackLines)
 	TArray<FShipAttackLineData> IncomingAttackLines;
 
+	bool NewlyOvertaken = false;
+
 	//Art
 	UPROPERTY(EditAnywhere)
 	TArray<UStaticMesh*> PlanetMeshes;
@@ -95,6 +97,7 @@ public:
 	void UpdateProductionDistribution(float NewDistribution);
 	void AddIncomingAttackLine(const FPlayerData& InPlayer, const int InFromPlanetIndex, const int InShipAmount);
 	void RemoveIncomingAttackLine(const FShipAttackLineData& AttackLineData);
+	void SetNewlyOvertaken(bool InNewlyOvertaken);
 	
 	int GetGeneratedGoldAmount() const;
 	float GetGeneratedTechXPAmount() const;
@@ -128,6 +131,7 @@ public:
 	int GetBuildingAmount(EBuildingType BuildingType) const { return Algo::CountIf(BuildingSlots, [BuildingType](const FBuildingSlot& BuildingSlot){ return BuildingSlot.CurrentBuildingType == BuildingType; }); }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	TArray<FShipAttackLineData> GetIncomingAttackLines() const { return IncomingAttackLines; }
+	bool GetNewlyOvertaken() const { return NewlyOvertaken; }
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetTotalShipAmount() const { return ShipAmount; }

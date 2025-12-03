@@ -18,7 +18,7 @@ FActionResult UEndTurnAction::PerformAction(AGameManager* GameManager, AStellarP
 	}
 
 	//End turn
-	UE_LOG(LogTemp, Warning, TEXT("PLAYER %s ENDED THEIR TURN"), *Player->GetPlayerData().Username)
+	UE_LOG(LogTemp, Log, TEXT("PLAYER %s ENDED THEIR TURN"), *Player->GetPlayerData().Username)
 	GameManager->EndTurn(Player);
 	return {true, ""};
 }
