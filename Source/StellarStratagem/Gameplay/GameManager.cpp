@@ -43,7 +43,7 @@ void AGameManager::BeginPlay()
 	OnPlayersUpdated.Broadcast();
 }
 
-void AGameManager::AddPlayer(AStellarPlayerController* Player)
+void AGameManager::AddPlayer(AStellarPlayerController* Player) const
 {
 	//Ensure adding player is only attempted on the server
 	if(!HasAuthority())
@@ -51,15 +51,26 @@ void AGameManager::AddPlayer(AStellarPlayerController* Player)
 		UE_LOG(LogTemp, Error, TEXT("TRYING TO ADD PLAYER TO GAME OUTSIDE OF SERVER"))
 		return;
 	}
+
+	//Ask player for player data
+	UE_LOG(LogTemp, Log, TEXT("ASKING FOR PLAYER DATA"))
+	Player->AskForPlayerData_Client();
+}
+
+void AGameManager::ReceivePlayerDataFromClient(AStellarPlayerController* Player, const FPlayerData& PlayerData)
+{
+	UE_LOG(LogTemp, Log, TEXT("RECEIVED PLAYER DATA IN GAME MANAGER"))
 	
 	//Add player
-	AllPlayers.AddUnique(Player->GetPlayerData());
+	const FPlayerData NewPlayerData = {PlayerData.Username};
+	AllPlayers.AddUnique(NewPlayerData);
 	AActor* PlayerActor = Player;
 	ConnectedPlayers.Add(PlayerActor, Player);
+	Player->SetPlayerDataIndex(AllPlayers.Num() - 1);
 
 	ForceNetUpdate();
 	
-	UE_LOG(LogTemp, Warning, TEXT("ADDED PLAYER %s TO GAME"), *Player->GetPlayerData().Username)
+	UE_LOG(LogTemp, Log, TEXT("ADDED PLAYER %s TO GAME"), *NewPlayerData.Username)
 }
 
 void AGameManager::RemovePlayer(AStellarPlayerController* Player)
@@ -78,7 +89,7 @@ void AGameManager::RemovePlayer(AStellarPlayerController* Player)
 
 	ForceNetUpdate();
 
-	UE_LOG(LogTemp, Warning, TEXT("REMOVED PLAYER %s FROM GAME"), *Player->GetPlayerData().Username)
+	UE_LOG(LogTemp, Log, TEXT("REMOVED PLAYER %s FROM GAME"), *Player->GetPlayerData().Username)
 }
 
 #pragma endregion

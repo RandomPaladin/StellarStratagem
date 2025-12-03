@@ -174,7 +174,8 @@ public:
 	virtual void BeginPlay() override;
 
 	//Lobby
-	void AddPlayer(AStellarPlayerController* Player);
+	void AddPlayer(AStellarPlayerController* Player) const;
+	void ReceivePlayerDataFromClient(AStellarPlayerController* Player, const FPlayerData& PlayerData);
 	void RemovePlayer(AStellarPlayerController* Player);
 
 	//Game
@@ -186,6 +187,7 @@ public:
 	TArray<AStellarPlayerController*> GetConnectedPlayerControllers() const;
 	AStellarPlayerController* GetPlayerControllerByPlayerData(const FPlayerData& PlayerData);
 	TArray<FPlayerData> GetAwaitedPlayers() const { return AwaitedPlayers; }
+	FPlayerData GetPlayerDataByIndex(const int PlayerIndex) const { return AllPlayers[PlayerIndex]; }
 	int GetPlayerAmount() const { return AllPlayers.Num(); }
 	bool GetGameStarted() const { return GameStarted; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
