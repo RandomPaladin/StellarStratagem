@@ -43,7 +43,7 @@ void AGameManager::BeginPlay()
 	OnPlayersUpdated.Broadcast();
 }
 
-void AGameManager::AddPlayer(AStellarPlayerController* Player)
+void AGameManager::AddPlayer(AStellarPlayerController* Player) const
 {
 	//Ensure adding player is only attempted on the server
 	if(!HasAuthority())
@@ -51,15 +51,26 @@ void AGameManager::AddPlayer(AStellarPlayerController* Player)
 		UE_LOG(LogTemp, Error, TEXT("TRYING TO ADD PLAYER TO GAME OUTSIDE OF SERVER"))
 		return;
 	}
+
+	//Ask player for player data
+	UE_LOG(LogTemp, Log, TEXT("ASKING FOR PLAYER DATA"))
+	Player->AskForPlayerData_Client();
+}
+
+void AGameManager::ReceivePlayerDataFromClient(AStellarPlayerController* Player, const FPlayerData& PlayerData)
+{
+	UE_LOG(LogTemp, Log, TEXT("RECEIVED PLAYER DATA IN GAME MANAGER"))
 	
 	//Add player
-	AllPlayers.AddUnique(Player->GetPlayerData());
+	const FPlayerData NewPlayerData = {PlayerData.Username};
+	AllPlayers.AddUnique(NewPlayerData);
 	AActor* PlayerActor = Player;
 	ConnectedPlayers.Add(PlayerActor, Player);
+	Player->SetPlayerDataIndex(AllPlayers.Num() - 1);
 
 	ForceNetUpdate();
 	
-	UE_LOG(LogTemp, Warning, TEXT("ADDED PLAYER %s TO GAME"), *Player->GetPlayerData().Username)
+	UE_LOG(LogTemp, Log, TEXT("ADDED PLAYER %s TO GAME"), *NewPlayerData.Username)
 }
 
 void AGameManager::RemovePlayer(AStellarPlayerController* Player)
@@ -78,7 +89,7 @@ void AGameManager::RemovePlayer(AStellarPlayerController* Player)
 
 	ForceNetUpdate();
 
-	UE_LOG(LogTemp, Warning, TEXT("REMOVED PLAYER %s FROM GAME"), *Player->GetPlayerData().Username)
+	UE_LOG(LogTemp, Log, TEXT("REMOVED PLAYER %s FROM GAME"), *Player->GetPlayerData().Username)
 }
 
 #pragma endregion
@@ -106,10 +117,32 @@ void AGameManager::StartGame()
 	GameStarted = true;
 
 	//Create planets
-	const int PlanetAmount = GetPlayerAmount() * SpawnPlanetsPerPlayer;
+	const int PlanetAmount = GetPlayerAmount() * PlanetData->SpawnPlanetsPerPlayer;
 	for (int i = 0; i < PlanetAmount; i++)
 	{
-		FVector SpawnLoc = {FMath::RandRange(SpawnPlanetXLocRange.X, SpawnPlanetXLocRange.Y), FMath::RandRange(SpawnPlanetYLocRange.X, SpawnPlanetYLocRange.Y), 0.f};
+		FVector SpawnLoc;
+		if(i == 0)
+			SpawnLoc = FVector::ZeroVector;
+		else
+		{
+			FVector NewLoc;
+			bool IntersectingExistingPlanet;
+			int Attempts = 0;
+			do
+			{
+				const float Distance = FMath::RandRange((float)PlanetData->DistanceBetweenPlanetsRange.X, (float)PlanetData->DistanceBetweenPlanetsRange.Y);
+				const float UnrealUnitsDistance = Distance * PlanetData->DistanceBetweenPlanetsToUnrealUnitsMultiplier;
+				const FVector Dir = FRotator::MakeFromEuler({0.f, 0.f, FMath::RandRange(0.f, 359.f)}).Vector();
+				NewLoc = Planets[i - 1]->GetActorLocation() + (Dir * UnrealUnitsDistance);
+				
+				IntersectingExistingPlanet = UHelperFunctions::Any(Planets, [this, NewLoc](const APlanet* Planet){ return Planet->GetDistanceToLocInGameUnits(NewLoc) < PlanetData->DistanceBetweenPlanetsRange.X; });
+				Attempts++;
+			}
+			while (IntersectingExistingPlanet && Attempts < 100);
+			
+			SpawnLoc = NewLoc;
+		}
+		
 		FRotator SpawnRot = {0.f, FMath::RandRange(SpawnPlanetRotRange.X, SpawnPlanetRotRange.Y), 0.f};
 		APlanet* SpawnedPlanet = GetWorld()->SpawnActor<APlanet>(PlanetTemplate, SpawnLoc, SpawnRot);
 		SpawnedPlanet->Setup(this, i);
@@ -165,7 +198,7 @@ void AGameManager::EndTurn(AStellarPlayerController* Player)
 
 void AGameManager::GoToNextRound()
 {
-	UE_LOG(LogTemp, Warning, TEXT("ALL PLAYERS ENDED THEIR TURN, GOING TO NEXT ROUND"))
+	UE_LOG(LogTemp, Log, TEXT("ALL PLAYERS ENDED THEIR TURN, GOING TO NEXT ROUND"))
 	
 	//Increment round
 	Round++;
@@ -178,13 +211,16 @@ void AGameManager::GoToNextRound()
 			PlayersResolutionResults.Add(Player);
 	}
 	
-	TArray<FRoundResolutionResults> NewResults = PlayersResolutionResults;
-
-	//Clear resolution results
-	for (FRoundResolutionResults& PlayerResolutionResult : NewResults)
-		PlayerResolutionResult.Results.Empty();
+	//Create new resolution results
+	TArray<FRoundResolutionResults> NewResults;
+	for(int i = 0; i < PlayersResolutionResults.Num(); i++)
+	{
+		FRoundResolutionResults Result = {PlayersResolutionResults[i].Player};
+		NewResults.Add(Result);
+	}
 
 	//Generate building resources
+	UE_LOG(LogTemp, Log, TEXT("GENERATING BUILDING RESOURCES"))
 	TMap<FPlayerData, int> GeneratedGold;
 	TMap<FPlayerData, float> GeneratedTechXP;
 	for (APlanet* Planet : Planets)
@@ -192,6 +228,13 @@ void AGameManager::GoToNextRound()
 		//Ignore unowned planets
 		if(!Planet->IsOwnedByAnyPlayer())
 			continue;
+
+		//Ignore newly overtaken planets
+		if(Planet->GetNewlyOvertaken())
+		{
+			Planet->SetNewlyOvertaken(false);
+			continue;
+		}
 
 		FPlayerData OwningPlayer = Planet->GetOwningPlayer();
 		
@@ -249,6 +292,7 @@ void AGameManager::GoToNextRound()
 	}
 	
 	//Resolve building plans
+	UE_LOG(LogTemp, Log, TEXT("RESOLVING BUILDING PLANS"))
 	for (APlanet* Planet : Planets)
 	{
 		//Ignore unowned planets
@@ -283,10 +327,12 @@ void AGameManager::GoToNextRound()
 	}
 
 	//Resolve ship movement
+	UE_LOG(LogTemp, Log, TEXT("RESOLVING SHIP MOVEMENT"))
 	for (APlanet* Planet : Planets)
 	{
 		Planet->ResolveShipMovement();
-		for (FShipAttackLineData IncomingAttackLine : Planet->GetIncomingAttackLines())
+		TArray<FShipAttackLineData> IncomingAttackLines = Planet->GetIncomingAttackLines();
+		for (FShipAttackLineData IncomingAttackLine : IncomingAttackLines)
 		{
 			const int OwningPlayerIndex = GetIndexOfPlayersResolutionResults(IncomingAttackLine.Player);
 			FString ResultString = "";
@@ -303,6 +349,7 @@ void AGameManager::GoToNextRound()
 	}
 
 	//Resolve combat
+	UE_LOG(LogTemp, Log, TEXT("RESOLVING COMBAT"))
 	for (APlanet* Planet : Planets)
 	{
 		//Get attack lines
@@ -315,12 +362,6 @@ void AGameManager::GoToNextRound()
 			const AStellarPlayerController* Player2 = GetPlayerControllerByPlayerData(AttackLine2.Player);
 			return Player1->GetTechLevel() > Player2->GetTechLevel();
 		});
-
-		UE_LOG(LogTemp, Warning, TEXT("TECH LEVELS =================="))
-		for (int i = 0; i < IncomingAttackLines.Num(); ++i)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("TECH LEVEL %d"), GetPlayerControllerByPlayerData(IncomingAttackLines[i].Player)->GetTechLevel())
-		}
 	
 		for (int i = 0; i < IncomingAttackLines.Num(); i++)
 		{
@@ -374,12 +415,13 @@ void AGameManager::GoToNextRound()
 				if(IncomingAttackLines[i].ShipAmount > 0)
 				{
 					Planet->SetOwningPlayer(IncomingAttackLines[i].Player);
+					Planet->SetNewlyOvertaken(true);
 					Planet->AddShipsDirectly(IncomingAttackLines[i].ShipAmount);
 				}
 
 				//Construct entry for combat
 				FString CombatResult = IncomingAttackLines[i].ShipAmount > 0 ? "won" : "lost";
-				FString ResultString = FString::Printf(TEXT("Player %s attacked player %s on planet %s and %s."), *IncomingAttackLines[i].Player.Username, *Planet->GetOwningPlayer().Username, *Planet->GetPlanetName(), *CombatResult);
+				FString ResultString = FString::Printf(TEXT("Player %s attacked player %s on planet %s and %s."), *Attacker.Username, *Defender.Username, *Planet->GetPlanetName(), *CombatResult);
 				FCombatResult CombatResultInfo = {Attacker, Defender, Planet->GetPlanetIndex(), AttackingShips, DefendingShips, AttackerWonList};
 				CombatResolutionResult = {RoundResolutionResultType_Combat, ResultString, CombatResultInfo};
 			}
@@ -394,6 +436,7 @@ void AGameManager::GoToNextRound()
 	}
 	
 	//Send result to clients
+	UE_LOG(LogTemp, Log, TEXT("SETTING NEW RESOLUTION RESULTS"))
 	PlayersResolutionResults = NewResults;
 }
 

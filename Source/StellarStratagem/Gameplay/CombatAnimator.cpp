@@ -31,8 +31,11 @@ void ACombatAnimator::BeginPlay()
 
 void ACombatAnimator::DoCombatAnimations()
 {
+	if(GameManager->GetIndexOfPlayersResolutionResults(LocalPlayer->GetPlayerData()) < 0)
+		return;
+	
 	//Get results where combat info is given
-	UHelperFunctions::Where(GameManager->GetPlayerResolutionResults(LocalPlayer->GetPlayerData()).Results, OUT Results, [](const FRoundResolutionResult& Ass){ return Ass.CombatResult.AttackingShips > 0; });
+	UHelperFunctions::Where(GameManager->GetPlayerResolutionResults(LocalPlayer->GetPlayerData()).Results, OUT Results, [](const FRoundResolutionResult& Result){ return Result.CombatResult.AttackingShips > 0; });
 
 	//Ignore if no results
 	if(Results.Num() == 0)
