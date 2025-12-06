@@ -133,12 +133,12 @@ void APlanet::UpdateProductionDistribution(const float NewDistribution)
 void APlanet::AddIncomingAttackLine(const FPlayerData& InPlayer, const int InFromPlanetIndex, const int InShipAmount)
 {
 	//Check if line exists owned by this player from the same from planet
-	FShipAttackLineData* ExistingLinePtr = IncomingAttackLines.FindByPredicate([InPlayer, InFromPlanetIndex](const FShipAttackLineData& AttackLine) { return AttackLine.Player == InPlayer && AttackLine.FromPlanetIndex == InFromPlanetIndex; });
+	const int Index = IncomingAttackLines.IndexOfByPredicate([InPlayer, InFromPlanetIndex](const FShipAttackLineData& AttackLine) { return AttackLine.Player == InPlayer && AttackLine.FromPlanetIndex == InFromPlanetIndex; });
 
 	//Update existing line
-	if(ExistingLinePtr)
+	if(Index >= 0)
 	{
-		FShipAttackLineData& ExistingLine = *ExistingLinePtr;
+		FShipAttackLineData& ExistingLine = IncomingAttackLines[Index];
 		ExistingLine.ShipAmount = InShipAmount;
 	}
 	else //No existing line, create one
@@ -148,6 +148,11 @@ void APlanet::AddIncomingAttackLine(const FPlayerData& InPlayer, const int InFro
 void APlanet::RemoveIncomingAttackLine(const FShipAttackLineData& AttackLineData)
 {
 	IncomingAttackLines.Remove(AttackLineData);
+}
+
+void APlanet::SetNewlyOvertaken(const bool InNewlyOvertaken)
+{
+	NewlyOvertaken = InNewlyOvertaken;
 }
 
 #pragma region Replication Funcs
@@ -235,7 +240,7 @@ void APlanet::ResolveShipMovement()
 		const int ShipStepDist = ShipMaxDist / ShipData->MoveDistancePerTurnDivisor;
 
 		//Find total distance between from and target planets
-		const int TotalDist = GetDistanceToPlanet(GameManager->GetPlanets()[IncomingAttackLine.FromPlanetIndex]);
+		const int TotalDist = GetDistanceToLocInGameUnits(GameManager->GetPlanets()[IncomingAttackLine.FromPlanetIndex]->GetActorLocation());
 		
 		//Update progress
 		const float NewProgress = IncomingAttackLine.Progress + ((float)ShipStepDist / (float)TotalDist);
@@ -255,21 +260,24 @@ void APlanet::AddShipsDirectly(const float InShipAmount)
 
 int APlanet::GetAvailableShipAmount() const
 {
-	float UsedShips = 0.f;
+	int UsedShips = 0;
 	for (const APlanet* Planet : GameManager->GetPlanets())
 	{
-		const FShipAttackLineData* OutgoingAttackLinePtr = Planet->GetIncomingAttackLines().FindByPredicate([this](const FShipAttackLineData& AttackLineData) { return AttackLineData.FromPlanetIndex == PlanetIndex; });
-		if(!OutgoingAttackLinePtr)
+		TArray<FShipAttackLineData> AttackLines = Planet->GetIncomingAttackLines();
+
+		int ThisPlanetsIndex = PlanetIndex;
+		const int Index = AttackLines.IndexOfByPredicate([ThisPlanetsIndex](const FShipAttackLineData& AttackLineData) { return AttackLineData.FromPlanetIndex == ThisPlanetsIndex; });
+		if(Index < 0)
 			continue;
 
-		const FShipAttackLineData& ExistingLine = *OutgoingAttackLinePtr;
+		const FShipAttackLineData& ExistingLine = AttackLines[Index];
 		UsedShips += ExistingLine.ShipAmount;
 	}
 	
-	return FMath::FloorToInt(ShipAmount - UsedShips);
+	return FMath::FloorToInt(ShipAmount - (float)UsedShips);
 }
 
-int APlanet::GetDistanceToPlanet(const APlanet* OtherPlanet) const
+int APlanet::GetDistanceToLocInGameUnits(const FVector& Loc) const
 {
-	return FMath::RoundToInt(FVector::Distance(GetActorLocation(), OtherPlanet->GetActorLocation()) / PlanetData->DistanceBetweenPlanetsToUnrealUnitsMultiplier);
+	return FMath::RoundToInt(FVector::Distance(GetActorLocation(), Loc) / PlanetData->DistanceBetweenPlanetsToUnrealUnitsMultiplier);
 }

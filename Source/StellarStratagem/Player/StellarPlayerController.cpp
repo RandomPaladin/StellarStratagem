@@ -17,9 +17,20 @@ void AStellarPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AStellarPlayerController, PlayerData);
+	DOREPLIFETIME(AStellarPlayerController, PlayerDataIndex);
 	DOREPLIFETIME(AStellarPlayerController, GoldAmount);
 	DOREPLIFETIME(AStellarPlayerController, TechLevel);
+}
+
+void AStellarPlayerController::SetPlayerDataIndex(const int NewIndex)
+{
+	if(!HasAuthority())
+	{
+		UE_LOG(LogTemp, Error, TEXT("TRYING TO SET PLAYER DATA INDEX OUTSIDE OF SERVER"))
+		return;
+	}
+	
+	PlayerDataIndex = NewIndex;
 }
 
 void AStellarPlayerController::BeginPlay()
@@ -33,9 +44,6 @@ void AStellarPlayerController::BeginPlay()
 	//On server setup
 	if(HasAuthority())
 	{
-		//Set random username
-		PlayerData = {FString::FromInt(FMath::RandRange(0, 10000000))};
-
 		//Set initial gold amount
 		GoldAmount = StartingGold;
 	}
@@ -79,6 +87,18 @@ void AStellarPlayerController::OnRep_GoldAmount() const
 }
 
 #pragma endregion
+
+void AStellarPlayerController::AskForPlayerData_Client_Implementation()
+{
+	//Create random username
+	const FPlayerData PlayerData = {FString::FromInt(FMath::RandRange(0, 10000000))};
+	SendPlayerData_Server(PlayerData);
+}
+
+void AStellarPlayerController::SendPlayerData_Server_Implementation(const FPlayerData& PlayerData)
+{
+	GetGameManager()->ReceivePlayerDataFromClient(this, PlayerData);
+}
 
 void AStellarPlayerController::CloseApplication()
 {
@@ -135,6 +155,18 @@ void AStellarPlayerController::AddTechXP(const float Xp)
 
 	//Add xp
 	TechLevel += Xp;
+}
+
+FPlayerData AStellarPlayerController::GetPlayerData()
+{
+	if(PlayerDataIndex < 0)
+	{
+		UE_LOG(LogTemp, Error, TEXT("TRYING TO GET PLAYER DATA BUT NO INDEX IS SET YET"))
+		FDebug::DumpStackTraceToLog(ELogVerbosity::Type::Warning);
+		return {};
+	}
+	
+	return GetGameManager()->GetPlayerDataByIndex(PlayerDataIndex);
 }
 
 #pragma endregion
@@ -233,7 +265,7 @@ void AStellarPlayerController::OnPressMoved(const FVector& Loc)
 				DraggingFromPlanet = true;
 				
 				//Create attack line if dragging from owned planet with enough ships
-				if(InitiallyPressedPlanet->IsOwnedByPlayer(PlayerData) && InitiallyPressedPlanet->GetAvailableShipAmount() >= 1)
+				if(InitiallyPressedPlanet->IsOwnedByPlayer(GetPlayerData()) && InitiallyPressedPlanet->GetAvailableShipAmount() >= 1)
 				{
 					CurrentShipAttackLine = GetShipAttackLineManager()->CreateAttackLine();
 					CurrentShipAttackLine->SetFromLoc(InitiallyPressedPlanet->GetActorLocation());
@@ -267,7 +299,7 @@ void AStellarPlayerController::OnPressReleased(const FVector& Loc)
 		if(CurrentShipAttackLine)
 		{
 			APlanet* ReleasedOnPlanet = GetHoveredPlanet(Loc);
-			if(ReleasedOnPlanet && !ReleasedOnPlanet->IsOwnedByPlayer(PlayerData))
+			if(ReleasedOnPlanet && !ReleasedOnPlanet->IsOwnedByPlayer(GetPlayerData()))
 			{
 				//If an attack line between these planets already exists, use that one instead
 				AShipAttackLine* ExistingAttackLine = GetShipAttackLineManager()->GetShipAttackLineToPlanet(ReleasedOnPlanet);
@@ -365,7 +397,7 @@ APlanet* AStellarPlayerController::GetSelectedPlanet()
 {
 	//If no planet selected, find one that is owned by self
 	if(!SelectedPlanet)
-		SelectedPlanet = *GetGameManager()->GetPlanets().FindByPredicate([this](const APlanet* Planet){ return Planet->IsOwnedByPlayer(PlayerData); });
+		SelectedPlanet = *GetGameManager()->GetPlanets().FindByPredicate([this](const APlanet* Planet){ return Planet->IsOwnedByPlayer(GetPlayerData()); });
 
 	return SelectedPlanet;
 }

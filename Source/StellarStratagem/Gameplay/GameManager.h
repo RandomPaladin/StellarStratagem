@@ -6,6 +6,7 @@
 #include "StellarStratagem/Utility/HelperFunctions.h"
 #include "GameManager.generated.h"
 
+class UPlanetGradeData;
 class APlanet;
 class AServerManager;
 class AStellarPlayerController;
@@ -148,12 +149,8 @@ protected:
 	//Planets
 	UPROPERTY(EditAnywhere, Category=Planets)
 	TSubclassOf<APlanet> PlanetTemplate;
-	UPROPERTY(EditAnywhere, Category=Planets)
-	int SpawnPlanetsPerPlayer = 5;
-	UPROPERTY(EditAnywhere, Category=Planets)
-	FVector2D SpawnPlanetXLocRange = {-3000.f, 3000.f};
-	UPROPERTY(EditAnywhere, Category=Planets)
-	FVector2D SpawnPlanetYLocRange = {-3000.f, 3000.f};
+	UPROPERTY(EditAnywhere)
+	UPlanetGradeData* PlanetData;
 	UPROPERTY(EditAnywhere, Category=Planets)
 	FVector2D SpawnPlanetRotRange = {0.f, 359.f};
 	UPROPERTY(VisibleAnywhere, Category=Planets)
@@ -177,7 +174,8 @@ public:
 	virtual void BeginPlay() override;
 
 	//Lobby
-	void AddPlayer(AStellarPlayerController* Player);
+	void AddPlayer(AStellarPlayerController* Player) const;
+	void ReceivePlayerDataFromClient(AStellarPlayerController* Player, const FPlayerData& PlayerData);
 	void RemovePlayer(AStellarPlayerController* Player);
 
 	//Game
@@ -189,6 +187,7 @@ public:
 	TArray<AStellarPlayerController*> GetConnectedPlayerControllers() const;
 	AStellarPlayerController* GetPlayerControllerByPlayerData(const FPlayerData& PlayerData);
 	TArray<FPlayerData> GetAwaitedPlayers() const { return AwaitedPlayers; }
+	FPlayerData GetPlayerDataByIndex(const int PlayerIndex) const { return AllPlayers[PlayerIndex]; }
 	int GetPlayerAmount() const { return AllPlayers.Num(); }
 	bool GetGameStarted() const { return GameStarted; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -202,7 +201,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	APlanet* GetPlanetByIndex(const int PlanetIndex) const { return Planets[PlanetIndex]; }
 
-	int GetIndexOfPlayersResolutionResults(const FPlayerData& Player) const { return PlayersResolutionResults.IndexOfByPredicate([Player](const FRoundResolutionResults& Results) { return Results.Player == Player; }); };
+	int GetIndexOfPlayersResolutionResults(const FPlayerData& Player) const { return PlayersResolutionResults.IndexOfByPredicate([Player](const FRoundResolutionResults& Results) { return Results.Player == Player; }); }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FRoundResolutionResults GetPlayerResolutionResults(const FPlayerData& Player) const { return PlayersResolutionResults[GetIndexOfPlayersResolutionResults(Player)]; }
 	

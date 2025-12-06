@@ -33,7 +33,7 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 	FString CurrentGameCode;
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
-	FPlayerData PlayerData;
+	int PlayerDataIndex = -1;
 
 	UPROPERTY()
 	AGameManager* GameManager;
@@ -92,6 +92,13 @@ private:
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void TryStartGame_Server();
 
+public:
+	UFUNCTION(Client, Reliable)
+	void AskForPlayerData_Client();
+private:
+	UFUNCTION(Server, Reliable)
+	void SendPlayerData_Server(const FPlayerData& PlayerData);
+
 	//Actions
 public:
 	UFUNCTION(BlueprintCallable, Server, Reliable)
@@ -128,13 +135,15 @@ public:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	void SetPlayerDataIndex(int NewIndex);
+	
 	void AddGold(int Gold);
 	void RemoveGold(int Gold);
 	void AddTechXP(float Xp);
 
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FPlayerData GetPlayerData() const { return PlayerData; }
+	FPlayerData GetPlayerData();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	APlanet* GetSelectedPlanet();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
