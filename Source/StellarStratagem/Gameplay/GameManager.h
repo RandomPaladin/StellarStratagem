@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "StellarStratagem/Player/StellarPlayerController.h"
+#include "StellarStratagem/Player/PlayerData.h"
 #include "StellarStratagem/Utility/HelperFunctions.h"
 #include "GameManager.generated.h"
 
@@ -13,6 +13,7 @@ class AStellarPlayerController;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameStateChanged, bool, Started);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlanetListUpdated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnGoldUpdatedDelegate, FPlayerData, Player, int, NewGoldAmount);
 
 UENUM(BlueprintType)
 enum ERoundResolutionResultType
@@ -124,6 +125,9 @@ class STELLARSTRATAGEM_API AGameManager : public AActor
 	UPROPERTY(VisibleAnywhere)
 	AServerManager* ServerManager;
 
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_GameCode)
+	FString GameCode;
+
 	UPROPERTY(VisibleAnywhere, Replicated)
 	int Round = 0;
 	
@@ -132,7 +136,9 @@ class STELLARSTRATAGEM_API AGameManager : public AActor
 
 	//Replication callbacks
 	UFUNCTION()
-	void OnRep_ConnectedPlayers() const;
+	void OnRep_ConnectedPlayers(TArray<FPlayerData> PrevAllPlayers) const;
+	UFUNCTION()
+	void OnRep_GameCode();
 	UFUNCTION()
 	void OnRep_GameStarted() const;
 	UFUNCTION()
@@ -157,6 +163,8 @@ protected:
 	TArray<APlanet*> Planets;
 
 	//Gameplay
+	UPROPERTY(EditAnywhere)
+	int StartingGold = 100;
 private:
 	void GoToNextRound();
 public:
@@ -166,8 +174,12 @@ private:
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_PlayersResolutionResults)
 	TArray<FRoundResolutionResults> PlayersResolutionResults;
 
-	//Setup
 public:
+	void AddGold(FPlayerData Player, int Gold);
+	void RemoveGold(FPlayerData Player, int Gold);
+	void AddTechXP(FPlayerData Player, float Xp);
+
+	//Setup
 	AGameManager();
 	virtual bool IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -179,6 +191,7 @@ public:
 	void RemovePlayer(AStellarPlayerController* Player);
 
 	//Game
+	void SetupGame(FString NewGameCode);
 	void StartGame();
 	void EndTurn(AStellarPlayerController* Player);
 
@@ -188,6 +201,8 @@ public:
 	AStellarPlayerController* GetPlayerControllerByPlayerData(const FPlayerData& PlayerData);
 	TArray<FPlayerData> GetAwaitedPlayers() const { return AwaitedPlayers; }
 	FPlayerData GetPlayerDataByIndex(const int PlayerIndex) const { return AllPlayers[PlayerIndex]; }
+	int GetPlayerDataIndex(const FPlayerData& InPlayerData) const;
+	TArray<FPlayerData> GetAllPlayers() const { return AllPlayers; }
 	int GetPlayerAmount() const { return AllPlayers.Num(); }
 	bool GetGameStarted() const { return GameStarted; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -214,4 +229,7 @@ public:
 	FNoParamDelegate OnPlayersResolutionResultsUpdated;
 	UPROPERTY(BlueprintAssignable)
 	FOnPlanetListUpdated OnPlanetListUpdated;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnGoldUpdatedDelegate OnGoldUpdated;
 };

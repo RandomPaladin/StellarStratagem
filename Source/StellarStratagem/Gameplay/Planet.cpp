@@ -106,7 +106,7 @@ void APlanet::UpdateBuilding(AStellarPlayerController* Player, const int Buildin
 	if(!HasCurrentBuilding && HasTargetBuilding) //Plan new building
 	{
 		//Remove gold
-		Player->RemoveGold(PlanetData->Buildings[TargetBuildingType].GoldCost);
+		GameManager->RemoveGold(Player->GetPlayerData(), PlanetData->Buildings[TargetBuildingType].GoldCost);
 
 		//Plan build
 		Slot->TargetBuildingType = TargetBuildingType;
@@ -114,7 +114,7 @@ void APlanet::UpdateBuilding(AStellarPlayerController* Player, const int Buildin
 	else if(!HasCurrentBuilding && HasPlannedBuilding) //Remove plan for new building
 	{
 		//Give gold back
-		Player->AddGold(PlanetData->Buildings[Slot->TargetBuildingType].GoldCost);
+		GameManager->AddGold(Player->GetPlayerData(), PlanetData->Buildings[Slot->TargetBuildingType].GoldCost);
 
 		//Unplan build
 		Slot->TargetBuildingType = BuildingType_None;
@@ -236,7 +236,8 @@ void APlanet::ResolveShipMovement()
 			GameManager->GetPlanets()[IncomingAttackLine.FromPlanetIndex]->ShipAmount -= (float)IncomingAttackLine.ShipAmount;
 		
 		//Calculate ship travel distance including player tech level
-		const int ShipMaxDist = ShipData->DefaultShipMoveDistance + GameManager->GetPlayerControllerByPlayerData(IncomingAttackLine.Player)->GetTechLevel();
+		const int IncomingPlayerIndex = GameManager->GetPlayerDataIndex(IncomingAttackLine.Player);
+		const int ShipMaxDist = ShipData->DefaultShipMoveDistance + GameManager->GetAllPlayers()[IncomingPlayerIndex].GetTechLevel();
 		const int ShipStepDist = ShipMaxDist / ShipData->MoveDistancePerTurnDivisor;
 
 		//Find total distance between from and target planets

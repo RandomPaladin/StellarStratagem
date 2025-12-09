@@ -30,6 +30,7 @@ bool AServerManager::TryCreateGame(AStellarPlayerController* Player, const FStri
 	//Spawn new game
 	UE_LOG(LogTemp, Warning, TEXT("CREATING NEW GAME %s"), *GameCode)
 	AGameManager* SpawnedGame = GetWorld()->SpawnActor<AGameManager>(GameManagerTemplate);
+	SpawnedGame->SetupGame(GameCode);
 	Games.Add(GameCode, SpawnedGame);
 	
 	//Add player to game
@@ -118,5 +119,6 @@ void AServerManager::TryLeaveGame(AStellarPlayerController* Player)
 
 void AServerManager::OnGameSpawnComplete(AGameManager* Game) const
 {
+	UE_LOG(LogTemp, Warning, TEXT("GAME SPAWN COMPLETE"))
 	OnGameCreatedOrJoined.Broadcast(Game);
 }

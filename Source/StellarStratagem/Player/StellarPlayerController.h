@@ -16,7 +16,6 @@ struct FActionData;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlanetSelectedDelegate, APlanet*, Planet);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMessageReceivedDelegate, FString, Message);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGoldUpdatedDelegate, int, NewGoldAmount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnShipAttackLineCreatedDelegate, AShipAttackLine*, ShipAttackLine);
 
 UCLASS()
@@ -32,7 +31,7 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 	UPROPERTY()
 	FString CurrentGameCode;
 	
-	UPROPERTY(VisibleAnywhere, Replicated)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_PlayerDataIndex)
 	int PlayerDataIndex = -1;
 
 	UPROPERTY()
@@ -40,14 +39,6 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 
 	UPROPERTY(VisibleAnywhere)
 	AShipAttackLineManager* ShipAttackLineManager;
-
-	//Player vars
-	UPROPERTY(EditAnywhere)
-	int StartingGold = 100;
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_GoldAmount)
-	int GoldAmount = 0;
-	UPROPERTY(VisibleAnywhere, Replicated)
-	float TechLevel = 0.f;
 
 	//Input vars
 protected:
@@ -78,14 +69,14 @@ protected:
 	TArray<UObject*> InputOccluders;
 
 private:
-	//Replication funcs
-	UFUNCTION()
-	void OnRep_GoldAmount() const;
-	
 	//Game setup
-	UFUNCTION(BlueprintCallable, Server, Reliable)
+	UFUNCTION(BlueprintCallable)
+	void TryCreateGame(const FString& GameCode);
+	UFUNCTION(BlueprintCallable)
+	void TryJoinGame(const FString& GameCode);
+	UFUNCTION(Server, Reliable)
 	void TryCreateGame_Server(const FString& GameCode);
-	UFUNCTION(BlueprintCallable, Server, Reliable)
+	UFUNCTION(Server, Reliable)
 	void TryJoinGame_Server(const FString& GameCode);
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void TryLeaveGame_Server();
@@ -98,6 +89,9 @@ public:
 private:
 	UFUNCTION(Server, Reliable)
 	void SendPlayerData_Server(const FPlayerData& PlayerData);
+
+	UFUNCTION()
+	void OnRep_PlayerDataIndex();
 
 	//Actions
 public:
@@ -136,10 +130,6 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void SetPlayerDataIndex(int NewIndex);
-	
-	void AddGold(int Gold);
-	void RemoveGold(int Gold);
-	void AddTechXP(float Xp);
 
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -147,16 +137,14 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	APlanet* GetSelectedPlanet();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	int GetGold() const { return GoldAmount; }
-	int GetTechLevel() const { return FMath::Floor(TechLevel); }
+	int GetGold() { return GetPlayerData().GoldAmount; }
+	FString GetCurrentGameCode() const { return CurrentGameCode; }
 
 	//Delegates
 	UPROPERTY(BlueprintAssignable)
 	FOnPlanetSelectedDelegate OnPlanetSelected;
 	UPROPERTY(BlueprintAssignable)
 	FOnMessageReceivedDelegate OnMessageReceived;
-	UPROPERTY(BlueprintAssignable)
-	FOnGoldUpdatedDelegate OnGoldUpdated;
 	UPROPERTY(BlueprintAssignable)
 	FOnShipAttackLineCreatedDelegate OnShipAttackLineCreated;
 };

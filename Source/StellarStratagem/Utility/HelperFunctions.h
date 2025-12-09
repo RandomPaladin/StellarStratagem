@@ -17,6 +17,9 @@ public:
 
 	template<class T, typename Predicate> 
 	static bool Any(TArray<T> InArray, Predicate Pred);
+
+	template<class T, typename Predicate> 
+	static bool First(const TArray<T> InArray, Predicate Pred, T& OutValue);
 };
 
 template <class T, typename Predicate>
@@ -40,4 +43,15 @@ bool UHelperFunctions::Any(TArray<T> InArray, Predicate Pred)
 	}
 
 	return false;
+}
+
+template <class T, typename Predicate>
+bool UHelperFunctions::First(const TArray<T> InArray, Predicate Pred, T& OutValue)
+{
+	int Index = InArray.IndexOfByPredicate(Pred);
+	if (Index < 0)
+		return false;
+
+	OutValue = InArray[Index];
+	return true;
 }

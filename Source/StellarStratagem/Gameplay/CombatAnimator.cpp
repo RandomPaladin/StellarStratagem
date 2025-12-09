@@ -1,5 +1,6 @@
 #include "CombatAnimator.h"
 #include "Kismet/GameplayStatics.h"
+#include "StellarStratagem/Player/StellarPlayerController.h"
 
 ACombatAnimator::ACombatAnimator()
 {

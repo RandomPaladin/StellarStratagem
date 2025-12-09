@@ -18,8 +18,6 @@ void AStellarPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AStellarPlayerController, PlayerDataIndex);
-	DOREPLIFETIME(AStellarPlayerController, GoldAmount);
-	DOREPLIFETIME(AStellarPlayerController, TechLevel);
 }
 
 void AStellarPlayerController::SetPlayerDataIndex(const int NewIndex)
@@ -40,18 +38,23 @@ void AStellarPlayerController::BeginPlay()
 	
 	//Get server manager
 	ServerManager = Cast<AServerManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AServerManager::StaticClass()));
-
-	//On server setup
-	if(HasAuthority())
-	{
-		//Set initial gold amount
-		GoldAmount = StartingGold;
-	}
-
+	
 	Super::BeginPlay();
 }
 
 #pragma region Game Creation / Joining
+
+void AStellarPlayerController::TryCreateGame(const FString& GameCode)
+{
+	CurrentGameCode = GameCode;
+	TryCreateGame_Server(GameCode);
+}
+
+void AStellarPlayerController::TryJoinGame(const FString& GameCode)
+{
+	CurrentGameCode = GameCode;
+	TryJoinGame_Server(GameCode);
+}
 
 void AStellarPlayerController::TryCreateGame_Server_Implementation(const FString& GameCode)
 {
@@ -79,18 +82,10 @@ void AStellarPlayerController::TryStartGame_Server_Implementation()
 
 #pragma endregion
 
-#pragma region Replication Funcs
-
-void AStellarPlayerController::OnRep_GoldAmount() const
-{
-	OnGoldUpdated.Broadcast(GoldAmount);
-}
-
-#pragma endregion
-
 void AStellarPlayerController::AskForPlayerData_Client_Implementation()
 {
 	//Create random username
+	UE_LOG(LogTemp, Warning, TEXT("WAS ASKED FOR DATA"))
 	const FPlayerData PlayerData = {FString::FromInt(FMath::RandRange(0, 10000000))};
 	SendPlayerData_Server(PlayerData);
 }
@@ -98,6 +93,11 @@ void AStellarPlayerController::AskForPlayerData_Client_Implementation()
 void AStellarPlayerController::SendPlayerData_Server_Implementation(const FPlayerData& PlayerData)
 {
 	GetGameManager()->ReceivePlayerDataFromClient(this, PlayerData);
+}
+
+void AStellarPlayerController::OnRep_PlayerDataIndex()
+{
+	GetGameManager()->OnPlayersUpdated.Broadcast();
 }
 
 void AStellarPlayerController::CloseApplication()
@@ -117,45 +117,6 @@ void AStellarPlayerController::GoToMainMenu()
 }
 
 #pragma region Gameplay
-
-void AStellarPlayerController::AddGold(const int Gold)
-{
-	//Ensure this is performed on the server
-	if(!HasAuthority())
-	{
-		UE_LOG(LogTemp, Error, TEXT("TRYING TO ADD GOLD OUTSIDE OF SERVER"))
-		return;
-	}
-
-	//Add gold
-	GoldAmount += Gold;
-}
-
-void AStellarPlayerController::RemoveGold(const int Gold)
-{
-	//Ensure this is performed on the server
-	if(!HasAuthority())
-	{
-		UE_LOG(LogTemp, Error, TEXT("TRYING TO ADD GOLD OUTSIDE OF SERVER"))
-		return;
-	}
-
-	//Remove gold, don't go under 0
-	GoldAmount = FMath::Max(GoldAmount - Gold, 0);
-}
-
-void AStellarPlayerController::AddTechXP(const float Xp)
-{
-	//Ensure this is performed on the server
-	if(!HasAuthority())
-	{
-		UE_LOG(LogTemp, Error, TEXT("TRYING TO ADD TECH XP OUTSIDE OF SERVER"))
-		return;
-	}
-
-	//Add xp
-	TechLevel += Xp;
-}
 
 FPlayerData AStellarPlayerController::GetPlayerData()
 {
