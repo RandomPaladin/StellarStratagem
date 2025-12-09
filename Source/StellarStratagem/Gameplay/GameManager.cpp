@@ -450,6 +450,16 @@ void AGameManager::GoToNextRound()
 			Planet->RemoveIncomingAttackLine(IncomingAttackLines[i]);
 		}
 	}
+
+	//Check if anyone won
+	FPlayerData SomePlayer = Planets[0]->GetOwningPlayer();
+	if(UHelperFunctions::All(Planets, [SomePlayer](const APlanet* Planet){ return Planet->IsOwnedByPlayer(SomePlayer); }))
+	{
+		FGameEndResult GameEndResult = {SomePlayer};
+		FString ResultString = FString::Printf(TEXT("Player %s won the game by claiming all %d planets."), *SomePlayer.Username, Planets.Num());
+		for (int i = 0; i < NewResults.Num(); i++)
+			NewResults[i].Results.Add({RoundResolutionResultType_Combat, ResultString, GameEndResult});
+	}
 	
 	//Send result to clients
 	UE_LOG(LogTemp, Log, TEXT("SETTING NEW RESOLUTION RESULTS"))

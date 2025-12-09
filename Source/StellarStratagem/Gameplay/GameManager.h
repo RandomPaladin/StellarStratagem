@@ -63,6 +63,25 @@ struct FCombatResult
 };
 
 USTRUCT(BlueprintType)
+struct FGameEndResult
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	FPlayerData Winner;
+
+	FGameEndResult()
+	{
+		Winner = {};
+	}
+
+	FGameEndResult(const FPlayerData& InWinner)
+	{
+		Winner = InWinner;
+	}
+};
+
+USTRUCT(BlueprintType)
 struct FRoundResolutionResult
 {
 	GENERATED_BODY()
@@ -73,6 +92,8 @@ struct FRoundResolutionResult
 	FString Result;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FCombatResult CombatResult;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FGameEndResult GameEndResult;
 
 	FRoundResolutionResult()
 	{
@@ -91,6 +112,13 @@ struct FRoundResolutionResult
 		ResultType = InResultType;
 		Result = InResult;
 		CombatResult = InCombatResult;
+	}
+
+	FRoundResolutionResult(const TEnumAsByte<ERoundResolutionResultType> InResultType, FString InResult, const FGameEndResult& InGameEndResult)
+	{
+		ResultType = InResultType;
+		Result = InResult;
+		GameEndResult = InGameEndResult;
 	}
 };
 

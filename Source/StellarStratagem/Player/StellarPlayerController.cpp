@@ -53,12 +53,14 @@ void AStellarPlayerController::BeginPlay()
 void AStellarPlayerController::TryCreateGame(const FString& GameCode)
 {
 	CurrentGameCode = GameCode;
+	UE_LOG(LogTemp, Warning, TEXT("SETTING PLAYERS GAME CODE TO %s"), *CurrentGameCode)
 	TryCreateGame_Server(GameCode);
 }
 
 void AStellarPlayerController::TryJoinGame(const FString& GameCode)
 {
 	CurrentGameCode = GameCode;
+	UE_LOG(LogTemp, Warning, TEXT("SETTING PLAYERS GAME CODE TO %s"), *CurrentGameCode)
 	TryJoinGame_Server(GameCode);
 }
 
@@ -66,14 +68,20 @@ void AStellarPlayerController::TryCreateGame_Server_Implementation(const FString
 {
 	const bool Succeeded = ServerManager->TryCreateGame(this, GameCode);
 	if(Succeeded)
+	{
 		CurrentGameCode = GameCode;
+		UE_LOG(LogTemp, Warning, TEXT("SETTING PLAYERS GAME CODE TO %s"), *CurrentGameCode)
+	}
 }
 
 void AStellarPlayerController::TryJoinGame_Server_Implementation(const FString& GameCode)
 {
 	const bool Succeeded = ServerManager->TryJoinGame(this, GameCode);
 	if(Succeeded)
+	{
 		CurrentGameCode = GameCode;
+		UE_LOG(LogTemp, Warning, TEXT("SETTING PLAYERS GAME CODE TO %s"), *CurrentGameCode)
+	}
 }
 
 void AStellarPlayerController::TryLeaveGame_Server_Implementation()

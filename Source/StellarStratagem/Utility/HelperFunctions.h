@@ -21,6 +21,9 @@ public:
 	static bool Any(TArray<T> InArray, Predicate Pred);
 
 	template<class T, typename Predicate> 
+	static bool All(TArray<T> InArray, Predicate Pred);
+
+	template<class T, typename Predicate> 
 	static bool First(const TArray<T> InArray, Predicate Pred, T& OutValue);
 	
 	static void SaveLocalUserData(const FString& Username);
@@ -48,6 +51,18 @@ bool UHelperFunctions::Any(TArray<T> InArray, Predicate Pred)
 	}
 
 	return false;
+}
+
+template <class T, typename Predicate>
+bool UHelperFunctions::All(TArray<T> InArray, Predicate Pred)
+{
+	for (T Entry : InArray)
+	{
+		if(!Pred(Entry))
+			return false;
+	}
+
+	return true;
 }
 
 template <class T, typename Predicate>
