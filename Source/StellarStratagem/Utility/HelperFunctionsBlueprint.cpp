@@ -1,4 +1,5 @@
 #include "HelperFunctionsBlueprint.h"
+#include "HelperFunctions.h"
 
 bool UHelperFunctionsBlueprint::Equal_PlayerData(const FPlayerData& A, const FPlayerData& B)
 {
@@ -43,4 +44,9 @@ bool UHelperFunctionsBlueprint::IsUsernameAllowed(const FString& Username, FStri
 	}
 
 	return true;
+}
+	
+ULocalUserSaveGame* UHelperFunctionsBlueprint::GetLocalUserData()
+{
+	return UHelperFunctions::GetLocalUserData();
 }

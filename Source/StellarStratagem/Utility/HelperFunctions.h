@@ -4,6 +4,8 @@
 #include "UObject/Object.h"
 #include "HelperFunctions.generated.h"
 
+class ULocalUserSaveGame;
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FNoParamDelegate);
 
 UCLASS()
@@ -20,6 +22,9 @@ public:
 
 	template<class T, typename Predicate> 
 	static bool First(const TArray<T> InArray, Predicate Pred, T& OutValue);
+	
+	static void SaveLocalUserData(const FString& Username);
+	static ULocalUserSaveGame* GetLocalUserData();
 };
 
 template <class T, typename Predicate>

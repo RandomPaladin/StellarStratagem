@@ -5,6 +5,8 @@
 #include "StellarStratagem/Player/PlayerData.h"
 #include "HelperFunctionsBlueprint.generated.h"
 
+class ULocalUserSaveGame;
+
 UCLASS()
 class STELLARSTRATAGEM_API UHelperFunctionsBlueprint : public UBlueprintFunctionLibrary
 {
@@ -21,4 +23,7 @@ class STELLARSTRATAGEM_API UHelperFunctionsBlueprint : public UBlueprintFunction
 
 	UFUNCTION(BlueprintPure, meta=(DisplayName="IsUsernameAllowed (String)"), Category="PlayerData")
 	static bool IsUsernameAllowed(const FString& Username, FString& OutResult);
+
+	UFUNCTION(BlueprintPure, meta=(DisplayName="GetLocalUserData"), Category="PlayerData")
+	static ULocalUserSaveGame* GetLocalUserData();
 };

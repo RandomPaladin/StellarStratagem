@@ -137,8 +137,8 @@ public:
 	void SetPlayerDataIndex(int NewIndex);
 
 	UFUNCTION(BlueprintCallable)
-	void SetLocalUsername(FString NewLocalUsername) { LocalUsername = NewLocalUsername; }
-	
+	void SetLocalUsername(FString NewLocalUsername);
+
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FPlayerData GetPlayerData();

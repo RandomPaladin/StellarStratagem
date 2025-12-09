@@ -31,6 +31,12 @@ void AStellarPlayerController::SetPlayerDataIndex(const int NewIndex)
 	PlayerDataIndex = NewIndex;
 }
 
+void AStellarPlayerController::SetLocalUsername(FString NewLocalUsername)
+{
+	LocalUsername = NewLocalUsername;
+	UHelperFunctions::SaveLocalUserData(LocalUsername);
+}
+
 void AStellarPlayerController::BeginPlay()
 {
 	//Calculate sqr of planet select radius
