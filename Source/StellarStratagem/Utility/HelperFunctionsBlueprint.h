@@ -18,4 +18,7 @@ class STELLARSTRATAGEM_API UHelperFunctionsBlueprint : public UBlueprintFunction
 
 	UFUNCTION(BlueprintPure, meta=(DisplayName="IsValid (PlayerData)"), Category="PlayerData")
 	static bool IsValid_PlayerData(const FPlayerData& A);
+
+	UFUNCTION(BlueprintPure, meta=(DisplayName="IsUsernameAllowed (String)"), Category="PlayerData")
+	static bool IsUsernameAllowed(const FString& Username, FString& OutResult);
 };

@@ -40,6 +40,8 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 	UPROPERTY(VisibleAnywhere)
 	AShipAttackLineManager* ShipAttackLineManager;
 
+	FString LocalUsername;
+
 	//Input vars
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
@@ -98,7 +100,7 @@ public:
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void SendAction_Server(const FActionData& ActionData);
 private:
-	UFUNCTION(BlueprintCallable, Client, Reliable)
+	UFUNCTION(Client, Reliable)
 	void ReceiveActionResult_Client(const FActionResult& ActionResult);
 	
 	//Other funcs
@@ -111,6 +113,9 @@ private:
 	FVector ScreenToWorldLoc(const FVector& ScreenLoc) const;
 	FVector ScreenToWorldDelta(const FVector& ScreenDelta) const;
 	APlanet* GetHoveredPlanet(const FVector& ScreenLoc);
+
+	UFUNCTION(BlueprintCallable)
+	void ShowMessage(FString Message) const;
 
 	//Input funcs
 	UFUNCTION(BlueprintCallable)
@@ -131,6 +136,9 @@ public:
 
 	void SetPlayerDataIndex(int NewIndex);
 
+	UFUNCTION(BlueprintCallable)
+	void SetLocalUsername(FString NewLocalUsername) { LocalUsername = NewLocalUsername; }
+	
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FPlayerData GetPlayerData();
@@ -139,6 +147,8 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int GetGold() { return GetPlayerData().GoldAmount; }
 	FString GetCurrentGameCode() const { return CurrentGameCode; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FString GetLocalUsername() const { return LocalUsername; }
 
 	//Delegates
 	UPROPERTY(BlueprintAssignable)

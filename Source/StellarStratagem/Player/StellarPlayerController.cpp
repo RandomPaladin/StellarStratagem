@@ -84,9 +84,7 @@ void AStellarPlayerController::TryStartGame_Server_Implementation()
 
 void AStellarPlayerController::AskForPlayerData_Client_Implementation()
 {
-	//Create random username
-	UE_LOG(LogTemp, Warning, TEXT("WAS ASKED FOR DATA"))
-	const FPlayerData PlayerData = {FString::FromInt(FMath::RandRange(0, 10000000))};
+	const FPlayerData PlayerData = {LocalUsername};
 	SendPlayerData_Server(PlayerData);
 }
 
@@ -176,8 +174,8 @@ void AStellarPlayerController::ReceiveActionResult_Client_Implementation(const F
 {
 	UE_LOG(LogTemp, Warning, TEXT("ACTION RESULT: %s %s"), *((ActionResult.Succeeded) ? FString{"true"} : FString{"false"}), *ActionResult.Message)
 	
-	if(!ActionResult.Succeeded && !ActionResult.Message.IsEmpty())
-		OnMessageReceived.Broadcast(ActionResult.Message);
+	if(!ActionResult.Succeeded)
+		ShowMessage(ActionResult.Message);
 }
 
 #pragma endregion
@@ -352,6 +350,14 @@ APlanet* AStellarPlayerController::GetHoveredPlanet(const FVector& ScreenLoc)
 	}
 
 	return nullptr;
+}
+
+void AStellarPlayerController::ShowMessage(const FString Message) const
+{
+	if(Message.IsEmpty())
+		return;
+	
+	OnMessageReceived.Broadcast(Message);
 }
 
 APlanet* AStellarPlayerController::GetSelectedPlanet()
