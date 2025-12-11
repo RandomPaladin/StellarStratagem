@@ -18,14 +18,6 @@ APlanet::APlanet()
 	RootComponent = MeshComp;
 }
 
-bool APlanet::IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const
-{
-	if(!GameManager)
-		return true;
-
-	return GameManager->GetConnectedPlayers().Contains(RealViewer);
-}
-
 void APlanet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

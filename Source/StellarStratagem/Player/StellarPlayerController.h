@@ -6,12 +6,12 @@
 #include "StellarStratagem/Actions/ActionBase.h"
 #include "StellarPlayerController.generated.h"
 
+class UOnlineGameInstance;
 class AShipAttackLineManager;
 class AShipAttackLine;
 class APlanet;
 class AGameManager;
 class USpringArmComponent;
-class AServerManager;
 struct FActionData;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlanetSelectedDelegate, APlanet*, Planet);
@@ -27,13 +27,13 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UWorld> MainGameMap;
 	UPROPERTY()
-	AServerManager* ServerManager;
-	UPROPERTY()
 	FString CurrentGameCode;
 	
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_PlayerDataIndex)
 	int PlayerDataIndex = -1;
 
+	UPROPERTY()
+	UOnlineGameInstance* OnlineGameInstance;
 	UPROPERTY()
 	AGameManager* GameManager;
 
@@ -108,16 +108,17 @@ private:
 	void CloseApplication();
 	UFUNCTION(BlueprintCallable)
 	void GoToMainMenu();
-	AGameManager* GetGameManager();
 	AShipAttackLineManager* GetShipAttackLineManager();
 	FVector ScreenToWorldLoc(const FVector& ScreenLoc) const;
 	FVector ScreenToWorldDelta(const FVector& ScreenDelta) const;
-	APlanet* GetHoveredPlanet(const FVector& ScreenLoc);
+	APlanet* GetHoveredPlanet(const FVector& ScreenLoc) const;
 
+public:
 	UFUNCTION(BlueprintCallable)
 	void ShowMessage(FString Message) const;
 
 	//Input funcs
+private:
 	UFUNCTION(BlueprintCallable)
 	void OnPress(const FVector& Loc);
 	UFUNCTION(BlueprintCallable)

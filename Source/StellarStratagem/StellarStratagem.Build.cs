@@ -15,6 +15,9 @@ public class StellarStratagem : ModuleRules
 			"OnlineSubsystem", 
 			"OnlineSubsystemUtils", 
 			"Networking",
+			"HTTP",
+			"Json",
+			"JsonUtilities",
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

@@ -9,9 +9,9 @@
 #include "StellarStratagem/Actions/SetAttackLineAction.h"
 #include "StellarStratagem/Gameplay/GameManager.h"
 #include "StellarStratagem/Gameplay/Planet.h"
-#include "StellarStratagem/Gameplay/ServerManager.h"
 #include "StellarStratagem/Gameplay/ShipAttackLine.h"
 #include "StellarStratagem/Gameplay/ShipAttackLineManager.h"
+#include "StellarStratagem/Multiplayer/OnlineGameInstance.h"
 
 void AStellarPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -41,9 +41,9 @@ void AStellarPlayerController::BeginPlay()
 {
 	//Calculate sqr of planet select radius
 	PlanetSelectRadiusSqr = FMath::Pow(PlanetSelectRadius, 2.f);
-	
-	//Get server manager
-	ServerManager = Cast<AServerManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AServerManager::StaticClass()));
+
+	OnlineGameInstance = Cast<UOnlineGameInstance>(UGameplayStatics::GetGameInstance(GetWorld()));
+	GameManager = Cast<AGameManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AGameManager::StaticClass()));
 	
 	Super::BeginPlay();
 }
@@ -54,7 +54,8 @@ void AStellarPlayerController::TryCreateGame(const FString& GameCode)
 {
 	CurrentGameCode = GameCode;
 	UE_LOG(LogTemp, Warning, TEXT("SETTING PLAYERS GAME CODE TO %s"), *CurrentGameCode)
-	TryCreateGame_Server(GameCode);
+
+	OnlineGameInstance->CreateGame(this, GameCode);
 }
 
 void AStellarPlayerController::TryJoinGame(const FString& GameCode)
@@ -92,6 +93,7 @@ void AStellarPlayerController::TryLeaveGame_Server_Implementation()
 void AStellarPlayerController::TryStartGame_Server_Implementation()
 {
 	GetGameManager()->StartGame();
+	GameManager->StartGame();
 }
 
 #pragma endregion
@@ -104,12 +106,12 @@ void AStellarPlayerController::AskForPlayerData_Client_Implementation()
 
 void AStellarPlayerController::SendPlayerData_Server_Implementation(const FPlayerData& PlayerData)
 {
-	GetGameManager()->ReceivePlayerDataFromClient(this, PlayerData);
+	GameManager->ReceivePlayerDataFromClient(this, PlayerData);
 }
 
 void AStellarPlayerController::OnRep_PlayerDataIndex()
 {
-	GetGameManager()->OnPlayersUpdated.Broadcast();
+	GameManager->OnPlayersUpdated.Broadcast();
 }
 
 void AStellarPlayerController::CloseApplication()
@@ -139,7 +141,7 @@ FPlayerData AStellarPlayerController::GetPlayerData()
 		return {};
 	}
 	
-	return GetGameManager()->GetPlayerDataByIndex(PlayerDataIndex);
+	return GameManager->GetPlayerDataByIndex(PlayerDataIndex);
 }
 
 #pragma endregion
@@ -178,7 +180,7 @@ void AStellarPlayerController::SendAction_Server_Implementation(const FActionDat
 	//Create and perform action
 	UActionBase* Action = NewObject<UActionBase>(GetTransientPackage(), ClassType);
 	Action->Data = ActionData;
-	const FActionResult Result = Action->PerformAction(GetGameManager(), this);
+	const FActionResult Result = Action->PerformAction(GameManager, this);
 
 	//Send result to client
 	ReceiveActionResult_Client(Result);
@@ -312,19 +314,6 @@ void AStellarPlayerController::UpdateInputOcclusion(UObject* Occluder, const boo
 
 #pragma region Helpers
 
-AGameManager* AStellarPlayerController::GetGameManager()
-{
-	if(!GameManager)
-	{
-		if(HasAuthority())
-			GameManager = ServerManager->GetGame(CurrentGameCode);
-		else
-			GameManager = Cast<AGameManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AGameManager::StaticClass()));
-	}
-
-	return GameManager;
-}
-
 AShipAttackLineManager* AStellarPlayerController::GetShipAttackLineManager()
 {
 	if(!ShipAttackLineManager)
@@ -351,10 +340,10 @@ FVector AStellarPlayerController::ScreenToWorldDelta(const FVector& ScreenDelta)
 	return EndWorldLoc - StartWorldLoc;
 }
 
-APlanet* AStellarPlayerController::GetHoveredPlanet(const FVector& ScreenLoc)
+APlanet* AStellarPlayerController::GetHoveredPlanet(const FVector& ScreenLoc) const
 {
 	const FVector WorldLoc = ScreenToWorldLoc(ScreenLoc);
-	for (APlanet* Planet : GetGameManager()->GetPlanets())
+	for (APlanet* Planet : GameManager->GetPlanets())
 	{
 		const float SqrDist = FVector::DistSquared(Planet->GetActorLocation(), WorldLoc);
 		if(SqrDist > PlanetSelectRadiusSqr)
@@ -378,7 +367,7 @@ APlanet* AStellarPlayerController::GetSelectedPlanet()
 {
 	//If no planet selected, find one that is owned by self
 	if(!SelectedPlanet)
-		SelectedPlanet = *GetGameManager()->GetPlanets().FindByPredicate([this](const APlanet* Planet){ return Planet->IsOwnedByPlayer(GetPlayerData()); });
+		SelectedPlanet = *GameManager->GetPlanets().FindByPredicate([this](const APlanet* Planet){ return Planet->IsOwnedByPlayer(GetPlayerData()); });
 
 	return SelectedPlanet;
 }

@@ -1,8 +1,6 @@
 #include "GameManager.h"
 #include "Planet.h"
-#include "ServerManager.h"
 #include "GameFramework/PlayerState.h"
-#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "StellarStratagem/Player/StellarPlayerController.h"
 
@@ -12,14 +10,6 @@ AGameManager::AGameManager()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
-}
-
-bool AGameManager::IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const
-{
-	if(ConnectedPlayers.Num() == 0)
-		return true;
-		
-	return ConnectedPlayers.Contains(RealViewer);
 }
 
 void AGameManager::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -43,7 +33,6 @@ void AGameManager::BeginPlay()
 void AGameManager::SetupGame(FString NewGameCode)
 {
 	GameCode = NewGameCode;
-	OnRep_GameCode();
 }
 
 void AGameManager::AddPlayer(AStellarPlayerController* Player) const
@@ -559,7 +548,7 @@ void AGameManager::OnRep_PlayersResolutionResults() const
 	OnPlayersResolutionResultsUpdated.Broadcast();
 }
 
-void AGameManager::OnRep_ConnectedPlayers(TArray<FPlayerData> PrevAllPlayers) const
+void AGameManager::OnRep_AllPlayers(TArray<FPlayerData> PrevAllPlayers) const
 {
 	//Find changed values for delegates
 	for(int i = 0; i < AllPlayers.Num(); i++)
@@ -576,43 +565,7 @@ void AGameManager::OnRep_ConnectedPlayers(TArray<FPlayerData> PrevAllPlayers) co
 	OnPlayersUpdated.Broadcast();
 }
 
-void AGameManager::OnRep_GameCode()
-{
-	UE_LOG(LogTemp, Warning, TEXT("DOING ON REP FOR GAME CODE"))
-	
-	//Complete spawn
-	if(!HasAuthority()) //Only complete spawn on the client if they're part of this game
-	{
-		const AStellarPlayerController* LocalPlayer = Cast<AStellarPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-		UE_LOG(LogTemp, Warning, TEXT("CHECKING FOR LOCAL PLAYERS CODE: CODES %s, %s"), *GameCode, *LocalPlayer->GetCurrentGameCode())
-		if(GameCode != LocalPlayer->GetCurrentGameCode())
-			return;
-	}
-	
-	ServerManager = Cast<AServerManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AServerManager::StaticClass()));
-	ServerManager->OnGameSpawnComplete(this);
-}
-
 #pragma endregion
-
-TArray<AStellarPlayerController*> AGameManager::GetConnectedPlayerControllers() const
-{
-	TArray<AStellarPlayerController*> PlayerControllers;
-	ConnectedPlayers.GenerateValueArray(PlayerControllers);
-
-	return PlayerControllers;
-}
-
-AStellarPlayerController* AGameManager::GetPlayerControllerByPlayerData(const FPlayerData& PlayerData)
-{
-	for (TTuple<AActor*, AStellarPlayerController*> Kvp : ConnectedPlayers)
-	{
-		if(Kvp.Value->GetPlayerData() == PlayerData)
-			return Kvp.Value;
-	}
-
-	return nullptr;
-}
 
 int AGameManager::GetPlayerDataIndex(const FPlayerData& InPlayerData) const
 {

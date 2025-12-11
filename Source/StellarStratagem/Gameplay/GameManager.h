@@ -150,10 +150,7 @@ class STELLARSTRATAGEM_API AGameManager : public AActor
 {
 	GENERATED_BODY()
 
-	UPROPERTY(VisibleAnywhere)
-	AServerManager* ServerManager;
-
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_GameCode)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	FString GameCode;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
@@ -164,9 +161,7 @@ class STELLARSTRATAGEM_API AGameManager : public AActor
 
 	//Replication callbacks
 	UFUNCTION()
-	void OnRep_ConnectedPlayers(TArray<FPlayerData> PrevAllPlayers) const;
-	UFUNCTION()
-	void OnRep_GameCode();
+	void OnRep_AllPlayers(TArray<FPlayerData> PrevAllPlayers) const;
 	UFUNCTION()
 	void OnRep_GameStarted() const;
 	UFUNCTION()
@@ -175,7 +170,7 @@ class STELLARSTRATAGEM_API AGameManager : public AActor
 	UPROPERTY(VisibleAnywhere)
 	TMap<AActor*, AStellarPlayerController*> ConnectedPlayers;
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_ConnectedPlayers)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_AllPlayers)
 	TArray<FPlayerData> AllPlayers;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<FPlayerData> AwaitedPlayers;
@@ -209,7 +204,6 @@ public:
 
 	//Setup
 	AGameManager();
-	virtual bool IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 
@@ -224,9 +218,6 @@ public:
 	void EndTurn(AStellarPlayerController* Player);
 
 	//Getters
-	TMap<AActor*, AStellarPlayerController*> GetConnectedPlayers() const { return ConnectedPlayers; }
-	TArray<AStellarPlayerController*> GetConnectedPlayerControllers() const;
-	AStellarPlayerController* GetPlayerControllerByPlayerData(const FPlayerData& PlayerData);
 	TArray<FPlayerData> GetAwaitedPlayers() const { return AwaitedPlayers; }
 	FPlayerData GetPlayerDataByIndex(const int PlayerIndex) const { return AllPlayers[PlayerIndex]; }
 	int GetPlayerDataIndex(const FPlayerData& InPlayerData) const;
