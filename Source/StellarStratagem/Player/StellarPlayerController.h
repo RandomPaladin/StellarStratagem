@@ -76,12 +76,6 @@ private:
 	void TryCreateGame(const FString& GameCode);
 	UFUNCTION(BlueprintCallable)
 	void TryJoinGame(const FString& GameCode);
-	UFUNCTION(Server, Reliable)
-	void TryCreateGame_Server(const FString& GameCode);
-	UFUNCTION(Server, Reliable)
-	void TryJoinGame_Server(const FString& GameCode);
-	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void TryLeaveGame_Server();
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void TryStartGame_Server();
 
