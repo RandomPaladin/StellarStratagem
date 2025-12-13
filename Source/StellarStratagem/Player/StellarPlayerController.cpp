@@ -9,17 +9,15 @@
 #include "StellarStratagem/Actions/SetAttackLineAction.h"
 #include "StellarStratagem/Gameplay/GameManager.h"
 #include "StellarStratagem/Gameplay/Planet.h"
-#include "StellarStratagem/Gameplay/ServerManager.h"
 #include "StellarStratagem/Gameplay/ShipAttackLine.h"
 #include "StellarStratagem/Gameplay/ShipAttackLineManager.h"
+#include "StellarStratagem/Multiplayer/OnlineGameInstance.h"
 
 void AStellarPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AStellarPlayerController, PlayerDataIndex);
-	DOREPLIFETIME(AStellarPlayerController, GoldAmount);
-	DOREPLIFETIME(AStellarPlayerController, TechLevel);
 }
 
 void AStellarPlayerController::SetPlayerDataIndex(const int NewIndex)
@@ -33,71 +31,62 @@ void AStellarPlayerController::SetPlayerDataIndex(const int NewIndex)
 	PlayerDataIndex = NewIndex;
 }
 
+void AStellarPlayerController::SetLocalUsername(FString NewLocalUsername)
+{
+	LocalUsername = NewLocalUsername;
+	UHelperFunctions::SaveLocalUserData(LocalUsername);
+}
+
 void AStellarPlayerController::BeginPlay()
 {
 	//Calculate sqr of planet select radius
 	PlanetSelectRadiusSqr = FMath::Pow(PlanetSelectRadius, 2.f);
+
+	OnlineGameInstance = Cast<UOnlineGameInstance>(UGameplayStatics::GetGameInstance(GetWorld()));
+	GameManager = Cast<AGameManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AGameManager::StaticClass()));
 	
-	//Get server manager
-	ServerManager = Cast<AServerManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AServerManager::StaticClass()));
-
-	//On server setup
-	if(HasAuthority())
-	{
-		//Set initial gold amount
-		GoldAmount = StartingGold;
-	}
-
 	Super::BeginPlay();
 }
 
 #pragma region Game Creation / Joining
 
-void AStellarPlayerController::TryCreateGame_Server_Implementation(const FString& GameCode)
+void AStellarPlayerController::TryCreateGame(const FString& GameCode)
 {
-	const bool Succeeded = ServerManager->TryCreateGame(this, GameCode);
-	if(Succeeded)
-		CurrentGameCode = GameCode;
+	CurrentGameCode = GameCode;
+	UE_LOG(LogTemp, Warning, TEXT("SETTING PLAYERS GAME CODE TO %s"), *CurrentGameCode)
+
+	OnlineGameInstance->CreateGame(this, GameCode);
 }
 
-void AStellarPlayerController::TryJoinGame_Server_Implementation(const FString& GameCode)
+void AStellarPlayerController::TryJoinGame(const FString& GameCode)
 {
-	const bool Succeeded = ServerManager->TryJoinGame(this, GameCode);
-	if(Succeeded)
-		CurrentGameCode = GameCode;
-}
+	CurrentGameCode = GameCode;
+	UE_LOG(LogTemp, Warning, TEXT("SETTING PLAYERS GAME CODE TO %s"), *CurrentGameCode)
 
-void AStellarPlayerController::TryLeaveGame_Server_Implementation()
-{
-	ServerManager->TryLeaveGame(this);
+	OnlineGameInstance->JoinGame(this, GameCode);
 }
 
 void AStellarPlayerController::TryStartGame_Server_Implementation()
 {
-	GetGameManager()->StartGame();
-}
-
-#pragma endregion
-
-#pragma region Replication Funcs
-
-void AStellarPlayerController::OnRep_GoldAmount() const
-{
-	OnGoldUpdated.Broadcast(GoldAmount);
+	GameManager->StartGame();
 }
 
 #pragma endregion
 
 void AStellarPlayerController::AskForPlayerData_Client_Implementation()
 {
-	//Create random username
-	const FPlayerData PlayerData = {FString::FromInt(FMath::RandRange(0, 10000000))};
+	const FPlayerData PlayerData = {LocalUsername};
 	SendPlayerData_Server(PlayerData);
 }
 
 void AStellarPlayerController::SendPlayerData_Server_Implementation(const FPlayerData& PlayerData)
 {
-	GetGameManager()->ReceivePlayerDataFromClient(this, PlayerData);
+	GameManager->ReceivePlayerDataFromClient(this, PlayerData);
+}
+
+void AStellarPlayerController::OnRep_PlayerDataIndex()
+{
+	GameManager->OnPlayersUpdated.Broadcast();
 }
 
 void AStellarPlayerController::CloseApplication()
@@ -118,45 +107,6 @@ void AStellarPlayerController::GoToMainMenu()
 
 #pragma region Gameplay
 
-void AStellarPlayerController::AddGold(const int Gold)
-{
-	//Ensure this is performed on the server
-	if(!HasAuthority())
-	{
-		UE_LOG(LogTemp, Error, TEXT("TRYING TO ADD GOLD OUTSIDE OF SERVER"))
-		return;
-	}
-
-	//Add gold
-	GoldAmount += Gold;
-}
-
-void AStellarPlayerController::RemoveGold(const int Gold)
-{
-	//Ensure this is performed on the server
-	if(!HasAuthority())
-	{
-		UE_LOG(LogTemp, Error, TEXT("TRYING TO ADD GOLD OUTSIDE OF SERVER"))
-		return;
-	}
-
-	//Remove gold, don't go under 0
-	GoldAmount = FMath::Max(GoldAmount - Gold, 0);
-}
-
-void AStellarPlayerController::AddTechXP(const float Xp)
-{
-	//Ensure this is performed on the server
-	if(!HasAuthority())
-	{
-		UE_LOG(LogTemp, Error, TEXT("TRYING TO ADD TECH XP OUTSIDE OF SERVER"))
-		return;
-	}
-
-	//Add xp
-	TechLevel += Xp;
-}
-
 FPlayerData AStellarPlayerController::GetPlayerData()
 {
 	if(PlayerDataIndex < 0)
@@ -166,7 +116,7 @@ FPlayerData AStellarPlayerController::GetPlayerData()
 		return {};
 	}
 	
-	return GetGameManager()->GetPlayerDataByIndex(PlayerDataIndex);
+	return GameManager->GetPlayerDataByIndex(PlayerDataIndex);
 }
 
 #pragma endregion
@@ -205,7 +155,7 @@ void AStellarPlayerController::SendAction_Server_Implementation(const FActionDat
 	//Create and perform action
 	UActionBase* Action = NewObject<UActionBase>(GetTransientPackage(), ClassType);
 	Action->Data = ActionData;
-	const FActionResult Result = Action->PerformAction(GetGameManager(), this);
+	const FActionResult Result = Action->PerformAction(GameManager, this);
 
 	//Send result to client
 	ReceiveActionResult_Client(Result);
@@ -215,8 +165,8 @@ void AStellarPlayerController::ReceiveActionResult_Client_Implementation(const F
 {
 	UE_LOG(LogTemp, Warning, TEXT("ACTION RESULT: %s %s"), *((ActionResult.Succeeded) ? FString{"true"} : FString{"false"}), *ActionResult.Message)
 	
-	if(!ActionResult.Succeeded && !ActionResult.Message.IsEmpty())
-		OnMessageReceived.Broadcast(ActionResult.Message);
+	if(!ActionResult.Succeeded)
+		ShowMessage(ActionResult.Message);
 }
 
 #pragma endregion
@@ -339,19 +289,6 @@ void AStellarPlayerController::UpdateInputOcclusion(UObject* Occluder, const boo
 
 #pragma region Helpers
 
-AGameManager* AStellarPlayerController::GetGameManager()
-{
-	if(!GameManager)
-	{
-		if(HasAuthority())
-			GameManager = ServerManager->GetGame(CurrentGameCode);
-		else
-			GameManager = Cast<AGameManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AGameManager::StaticClass()));
-	}
-
-	return GameManager;
-}
-
 AShipAttackLineManager* AStellarPlayerController::GetShipAttackLineManager()
 {
 	if(!ShipAttackLineManager)
@@ -378,10 +315,10 @@ FVector AStellarPlayerController::ScreenToWorldDelta(const FVector& ScreenDelta)
 	return EndWorldLoc - StartWorldLoc;
 }
 
-APlanet* AStellarPlayerController::GetHoveredPlanet(const FVector& ScreenLoc)
+APlanet* AStellarPlayerController::GetHoveredPlanet(const FVector& ScreenLoc) const
 {
 	const FVector WorldLoc = ScreenToWorldLoc(ScreenLoc);
-	for (APlanet* Planet : GetGameManager()->GetPlanets())
+	for (APlanet* Planet : GameManager->GetPlanets())
 	{
 		const float SqrDist = FVector::DistSquared(Planet->GetActorLocation(), WorldLoc);
 		if(SqrDist > PlanetSelectRadiusSqr)
@@ -393,11 +330,19 @@ APlanet* AStellarPlayerController::GetHoveredPlanet(const FVector& ScreenLoc)
 	return nullptr;
 }
 
+void AStellarPlayerController::ShowMessage(const FString Message) const
+{
+	if(Message.IsEmpty())
+		return;
+	
+	OnMessageReceived.Broadcast(Message);
+}
+
 APlanet* AStellarPlayerController::GetSelectedPlanet()
 {
 	//If no planet selected, find one that is owned by self
 	if(!SelectedPlanet)
-		SelectedPlanet = *GetGameManager()->GetPlanets().FindByPredicate([this](const APlanet* Planet){ return Planet->IsOwnedByPlayer(GetPlayerData()); });
+		SelectedPlanet = *GameManager->GetPlanets().FindByPredicate([this](const APlanet* Planet){ return Planet->IsOwnedByPlayer(GetPlayerData()); });
 
 	return SelectedPlanet;
 }

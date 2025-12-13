@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "StellarStratagem/Player/StellarPlayerController.h"
+#include "StellarStratagem/Player/PlayerData.h"
 #include "StellarStratagem/Utility/HelperFunctions.h"
 #include "GameManager.generated.h"
 
@@ -13,6 +13,7 @@ class AStellarPlayerController;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameStateChanged, bool, Started);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlanetListUpdated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnGoldUpdatedDelegate, FPlayerData, Player, int, NewGoldAmount);
 
 UENUM(BlueprintType)
 enum ERoundResolutionResultType
@@ -62,6 +63,25 @@ struct FCombatResult
 };
 
 USTRUCT(BlueprintType)
+struct FGameEndResult
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	FPlayerData Winner;
+
+	FGameEndResult()
+	{
+		Winner = {};
+	}
+
+	FGameEndResult(const FPlayerData& InWinner)
+	{
+		Winner = InWinner;
+	}
+};
+
+USTRUCT(BlueprintType)
 struct FRoundResolutionResult
 {
 	GENERATED_BODY()
@@ -72,6 +92,8 @@ struct FRoundResolutionResult
 	FString Result;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FCombatResult CombatResult;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FGameEndResult GameEndResult;
 
 	FRoundResolutionResult()
 	{
@@ -90,6 +112,13 @@ struct FRoundResolutionResult
 		ResultType = InResultType;
 		Result = InResult;
 		CombatResult = InCombatResult;
+	}
+
+	FRoundResolutionResult(const TEnumAsByte<ERoundResolutionResultType> InResultType, FString InResult, const FGameEndResult& InGameEndResult)
+	{
+		ResultType = InResultType;
+		Result = InResult;
+		GameEndResult = InGameEndResult;
 	}
 };
 
@@ -121,8 +150,8 @@ class STELLARSTRATAGEM_API AGameManager : public AActor
 {
 	GENERATED_BODY()
 
-	UPROPERTY(VisibleAnywhere)
-	AServerManager* ServerManager;
+	UPROPERTY(VisibleAnywhere, Replicated)
+	FString GameCode;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	int Round = 0;
@@ -132,7 +161,7 @@ class STELLARSTRATAGEM_API AGameManager : public AActor
 
 	//Replication callbacks
 	UFUNCTION()
-	void OnRep_ConnectedPlayers() const;
+	void OnRep_AllPlayers(TArray<FPlayerData> PrevAllPlayers) const;
 	UFUNCTION()
 	void OnRep_GameStarted() const;
 	UFUNCTION()
@@ -141,7 +170,7 @@ class STELLARSTRATAGEM_API AGameManager : public AActor
 	UPROPERTY(VisibleAnywhere)
 	TMap<AActor*, AStellarPlayerController*> ConnectedPlayers;
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_ConnectedPlayers)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_AllPlayers)
 	TArray<FPlayerData> AllPlayers;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<FPlayerData> AwaitedPlayers;
@@ -157,6 +186,8 @@ protected:
 	TArray<APlanet*> Planets;
 
 	//Gameplay
+	UPROPERTY(EditAnywhere)
+	int StartingGold = 100;
 private:
 	void GoToNextRound();
 public:
@@ -166,10 +197,13 @@ private:
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_PlayersResolutionResults)
 	TArray<FRoundResolutionResults> PlayersResolutionResults;
 
-	//Setup
 public:
+	void AddGold(FPlayerData Player, int Gold);
+	void RemoveGold(FPlayerData Player, int Gold);
+	void AddTechXP(FPlayerData Player, float Xp);
+
+	//Setup
 	AGameManager();
-	virtual bool IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 
@@ -179,15 +213,15 @@ public:
 	void RemovePlayer(AStellarPlayerController* Player);
 
 	//Game
+	void SetupGame(FString NewGameCode);
 	void StartGame();
 	void EndTurn(AStellarPlayerController* Player);
 
 	//Getters
-	TMap<AActor*, AStellarPlayerController*> GetConnectedPlayers() const { return ConnectedPlayers; }
-	TArray<AStellarPlayerController*> GetConnectedPlayerControllers() const;
-	AStellarPlayerController* GetPlayerControllerByPlayerData(const FPlayerData& PlayerData);
 	TArray<FPlayerData> GetAwaitedPlayers() const { return AwaitedPlayers; }
 	FPlayerData GetPlayerDataByIndex(const int PlayerIndex) const { return AllPlayers[PlayerIndex]; }
+	int GetPlayerDataIndex(const FPlayerData& InPlayerData) const;
+	TArray<FPlayerData> GetAllPlayers() const { return AllPlayers; }
 	int GetPlayerAmount() const { return AllPlayers.Num(); }
 	bool GetGameStarted() const { return GameStarted; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -214,4 +248,7 @@ public:
 	FNoParamDelegate OnPlayersResolutionResultsUpdated;
 	UPROPERTY(BlueprintAssignable)
 	FOnPlanetListUpdated OnPlanetListUpdated;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnGoldUpdatedDelegate OnGoldUpdated;
 };
