@@ -1,13 +1,81 @@
 #include "OnlineGameInstance.h"
+#include "HttpModule.h"
+#include "Interfaces/IHttpResponse.h"
 #include "Kismet/GameplayStatics.h"
+#include "StellarStratagem/Player/StellarPlayerController.h"
 
-void UOnlineGameInstance::ConnectToServer() const
+void UOnlineGameInstance::CreateGame(AStellarPlayerController* Player, const FString& GameCode)
 {
-	UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("192.168.0.192:7777")));
+	InstigatingPlayer = Player;
+	
+	const TSharedPtr<FJsonObject> JsonBody = MakeShareable(new FJsonObject());
+	JsonBody->SetStringField("game_code", GameCode);
+	FString RequestBody;
+	const TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+	FJsonSerializer::Serialize(JsonBody.ToSharedRef(), Writer);
+
+	SendRequestToServer(RequestBody, "create-game", &UOnlineGameInstance::OnGameCreated);
+}
+
+void UOnlineGameInstance::JoinGame(AStellarPlayerController* Player, const FString& GameCode)
+{
+	InstigatingPlayer = Player;
+	
+	const TSharedPtr<FJsonObject> JsonBody = MakeShareable(new FJsonObject());
+	JsonBody->SetStringField("game_code", GameCode);
+	FString RequestBody;
+	const TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+	FJsonSerializer::Serialize(JsonBody.ToSharedRef(), Writer);
+
+	SendRequestToServer(RequestBody, "join-game", &UOnlineGameInstance::OnGameCreated);
+}
+
+void UOnlineGameInstance::SendRequestToServer(const FString& RequestBody, const FString& FunctionName, void(UOnlineGameInstance::* Callback)(FHttpRequestPtr Request, FHttpResponsePtr Response, bool Success))
+{
+	//Create request
+	const TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+	Request->SetURL(FString::Printf(TEXT("%s:%s/%s"), *ServerIpAddress, *ServerEndpointPort, *FunctionName));
+	Request->SetVerb("POST");
+	Request->SetHeader("Content-Type", "application/json");
+	Request->SetContentAsString(RequestBody);
+
+	//Send request
+	Request->OnProcessRequestComplete().BindUObject(this, Callback);
+	Request->ProcessRequest();
+}
+
+void UOnlineGameInstance::OnGameCreated(FHttpRequestPtr Request, FHttpResponsePtr Response, const bool Success)
+{
+	if (!Success || !Response.IsValid())
+		return;
+
+	//Get content
+	const FString Body = Response->GetContentAsString();
+	TSharedPtr<FJsonObject> Json;
+	const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Body);
+	if (!FJsonSerializer::Deserialize(Reader, Json) || !Json.IsValid())
+		return;
+
+	//Handle errors
+	if(!Json->HasField("ip") || !Json->HasField("port"))
+	{
+		//Show error to player if one was given
+		if(Json->HasField("error") && InstigatingPlayer)
+			InstigatingPlayer->ShowMessage(Json->GetStringField("error"));
+			
+		return;
+	}
+
+	//Get target address
+	const FString Ip = Json->GetStringField("ip");
+	const int Port = Json->GetIntegerField("port");
+
+	//Connect to server
+	const FString URL = FString::Printf(TEXT("%s:%d"), *Ip, Port);
+	UGameplayStatics::GetPlayerController(GetWorld(), 0)->ClientTravel(URL, TRAVEL_Absolute);
 }
 
 bool UOnlineGameInstance::IsConnected() const
 {
-	ENetMode NetMode = GetWorld()->GetNetMode();
-	return NetMode == NM_Client;
+	return GetWorld()->GetNetMode() == NM_Client;
 }

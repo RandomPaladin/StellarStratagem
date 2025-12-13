@@ -1,7 +1,6 @@
 #include "GameManager.h"
 #include "Planet.h"
-#include "ServerManager.h"
-#include "Kismet/GameplayStatics.h"
+#include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "StellarStratagem/Player/StellarPlayerController.h"
 
@@ -13,18 +12,11 @@ AGameManager::AGameManager()
 	bReplicates = true;
 }
 
-bool AGameManager::IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const
-{
-	if(ConnectedPlayers.Num() == 0)
-		return true;
-		
-	return ConnectedPlayers.Contains(RealViewer);
-}
-
 void AGameManager::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	
+
+	DOREPLIFETIME(AGameManager, GameCode);
 	DOREPLIFETIME(AGameManager, Round);
 	DOREPLIFETIME(AGameManager, GameStarted);
 	DOREPLIFETIME(AGameManager, AllPlayers);
@@ -34,13 +26,13 @@ void AGameManager::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 void AGameManager::BeginPlay()
 {
 	Super::BeginPlay();
-
-	//Get server manager
-	ServerManager = Cast<AServerManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AServerManager::StaticClass()));
-
-	//Complete spawn
-	ServerManager->OnGameSpawnComplete(this);
+	
 	OnPlayersUpdated.Broadcast();
+}
+
+void AGameManager::SetupGame(FString NewGameCode)
+{
+	GameCode = NewGameCode;
 }
 
 void AGameManager::AddPlayer(AStellarPlayerController* Player) const
@@ -53,7 +45,7 @@ void AGameManager::AddPlayer(AStellarPlayerController* Player) const
 	}
 
 	//Ask player for player data
-	UE_LOG(LogTemp, Log, TEXT("ASKING FOR PLAYER DATA"))
+	UE_LOG(LogTemp, Log, TEXT("ASKING FOR PLAYER DATA FROM %d"), Player->PlayerState->GetPlayerId())
 	Player->AskForPlayerData_Client();
 }
 
@@ -153,7 +145,7 @@ void AGameManager::StartGame()
 	//Grant a starting planet to each player
 	const UEnum* GradeEnum = StaticEnum<EPlanetGrade>();
 	const int GradeEnumMiddleIndex = (GradeEnum->NumEnums() - 1) / 2;
-	for (FPlayerData Player : AllPlayers)
+	for (const FPlayerData& Player : AllPlayers)
 	{
 		//Find a suitable planet to grant to player (one closest to the middle grade)
 		int StartPlanetIndex = -1;
@@ -184,6 +176,10 @@ void AGameManager::StartGame()
 		//Grant starting planet to player
 		Planets[StartPlanetIndex]->SetOwningPlayer(Player);
 	}
+
+	//Grant starting gold
+	for (const FPlayerData& Player : AllPlayers)
+		AddGold(Player, StartingGold);
 }
 
 void AGameManager::EndTurn(AStellarPlayerController* Player)
@@ -240,7 +236,7 @@ void AGameManager::GoToNextRound()
 		
 		//Generate gold
 		const int GoldAmount = Planet->GetGeneratedGoldAmount();
-		GetPlayerControllerByPlayerData(OwningPlayer)->AddGold(GoldAmount); //TODO HANDLE DOING THIS WHILE PLAYER IS DISCONNECTED (MOVE PLAYER INFO TO STRUCTS ON GAME MANAGER, HAVE CONTROLLER ONLY SEND ACTIONS)
+		AddGold(OwningPlayer, GoldAmount);
 
 		//Record amount of gold generated per player
 		if(GeneratedGold.Contains(OwningPlayer))
@@ -250,7 +246,7 @@ void AGameManager::GoToNextRound()
 
 		//Generate tech xp
 		const float TechXPAmount = Planet->GetGeneratedTechXPAmount();
-		GetPlayerControllerByPlayerData(OwningPlayer)->AddTechXP(TechXPAmount);
+		AddTechXP(OwningPlayer, TechXPAmount);
 
 		//Record amount of tech xp generated per player
 		if(GeneratedTechXP.Contains(OwningPlayer))
@@ -358,9 +354,13 @@ void AGameManager::GoToNextRound()
 		//Sort attack lines by tech level
 		IncomingAttackLines.Sort([this](const FShipAttackLineData& AttackLine1, const FShipAttackLineData& AttackLine2)
 		{
-			const AStellarPlayerController* Player1 = GetPlayerControllerByPlayerData(AttackLine1.Player);
-			const AStellarPlayerController* Player2 = GetPlayerControllerByPlayerData(AttackLine2.Player);
-			return Player1->GetTechLevel() > Player2->GetTechLevel();
+			const int Player1Index = GetPlayerDataIndex(AttackLine1.Player);
+			const int Player2Index = GetPlayerDataIndex(AttackLine2.Player);
+
+			const FPlayerData& Player1Data = AllPlayers[Player1Index];
+			const FPlayerData& Player2Data = AllPlayers[Player2Index];
+			
+			return Player1Data.GetTechLevel() > Player2Data.GetTechLevel();
 		});
 	
 		for (int i = 0; i < IncomingAttackLines.Num(); i++)
@@ -384,8 +384,6 @@ void AGameManager::GoToNextRound()
 				//Get fighting players
 				FPlayerData Attacker = IncomingAttackLines[i].Player;
 				FPlayerData Defender = Planet->GetOwningPlayer();
-				AStellarPlayerController* AttackingPlayer = GetPlayerControllerByPlayerData(Attacker);
-				AStellarPlayerController* DefendingPlayer = GetPlayerControllerByPlayerData(Defender);
 				
 				//Combat
 				int AttackingShips = IncomingAttackLines[i].ShipAmount;
@@ -396,10 +394,17 @@ void AGameManager::GoToNextRound()
 					//Roll until the players don't tie
 					int AttackingPlayerRoll = 0;
 					int DefendingPlayerRoll = 0;
+
+					const int AttackerIndex = GetPlayerDataIndex(Attacker);
+					const int DefenderIndex = GetPlayerDataIndex(Defender);
+
+					const FPlayerData& AttackerDataRef = AllPlayers[AttackerIndex];
+					const FPlayerData& DefenderDataRef = AllPlayers[DefenderIndex];
+					
 					while(AttackingPlayerRoll == DefendingPlayerRoll)
 					{
-						AttackingPlayerRoll = FMath::RandRange(1, 20) + AttackingPlayer->GetTechLevel();
-						DefendingPlayerRoll = FMath::RandRange(1, 20) + DefendingPlayer->GetTechLevel();
+						AttackingPlayerRoll = FMath::RandRange(1, 20) + AttackerDataRef.GetTechLevel();
+						DefendingPlayerRoll = FMath::RandRange(1, 20) + DefenderDataRef.GetTechLevel();
 					}
 
 					//Remove one ship from defeated player
@@ -434,6 +439,16 @@ void AGameManager::GoToNextRound()
 			Planet->RemoveIncomingAttackLine(IncomingAttackLines[i]);
 		}
 	}
+
+	//Check if anyone won
+	FPlayerData SomePlayer = Planets[0]->GetOwningPlayer();
+	if(UHelperFunctions::All(Planets, [SomePlayer](const APlanet* Planet){ return Planet->IsOwnedByPlayer(SomePlayer); }))
+	{
+		FGameEndResult GameEndResult = {SomePlayer};
+		FString ResultString = FString::Printf(TEXT("Player %s won the game by claiming all %d planets."), *SomePlayer.Username, Planets.Num());
+		for (int i = 0; i < NewResults.Num(); i++)
+			NewResults[i].Results.Add({RoundResolutionResultType_Combat, ResultString, GameEndResult});
+	}
 	
 	//Send result to clients
 	UE_LOG(LogTemp, Log, TEXT("SETTING NEW RESOLUTION RESULTS"))
@@ -452,9 +467,76 @@ void AGameManager::RegisterPlanet(APlanet* Planet)
 	OnPlanetListUpdated.Broadcast();
 }
 
+void AGameManager::AddGold(FPlayerData Player, const int Gold)
+{
+	//Ensure this is performed on the server
+	if(!HasAuthority())
+	{
+		UE_LOG(LogTemp, Error, TEXT("TRYING TO ADD GOLD OUTSIDE OF SERVER"))
+		return;
+	}
+
+	//Find player
+	const int Index = GetPlayerDataIndex(Player);
+	if(Index < 0)
+	{
+		UE_LOG(LogTemp, Error, TEXT("COULDN'T FIND PLAYER IN ADD GOLD"))
+		return;
+	}
+	
+	//Add gold
+	FPlayerData& PlayerData = AllPlayers[Index];
+	PlayerData.GoldAmount += Gold;
+}
+
+void AGameManager::RemoveGold(FPlayerData Player, const int Gold)
+{
+	//Ensure this is performed on the server
+	if(!HasAuthority())
+	{
+		UE_LOG(LogTemp, Error, TEXT("TRYING TO ADD GOLD OUTSIDE OF SERVER"))
+		return;
+	}
+
+	//Find player
+	const int Index = GetPlayerDataIndex(Player);
+	if(Index < 0)
+	{
+		UE_LOG(LogTemp, Error, TEXT("COULDN'T FIND PLAYER IN REMOVE GOLD"))
+		return;
+	}
+
+	//Remove gold, don't go under 0
+	FPlayerData& PlayerData = AllPlayers[Index];
+	PlayerData.GoldAmount = FMath::Max(PlayerData.GoldAmount - Gold, 0);
+}
+
+void AGameManager::AddTechXP(FPlayerData Player, const float Xp)
+{
+	//Ensure this is performed on the server
+	if(!HasAuthority())
+	{
+		UE_LOG(LogTemp, Error, TEXT("TRYING TO ADD TECH XP OUTSIDE OF SERVER"))
+		return;
+	}
+
+	//Find player
+	const int Index = GetPlayerDataIndex(Player);
+	if(Index < 0)
+	{
+		UE_LOG(LogTemp, Error, TEXT("COULDN'T FIND PLAYER IN ADD TECH XP"))
+		return;
+	}
+
+	//Add xp
+	FPlayerData& PlayerData = AllPlayers[Index];
+	PlayerData.TechLevel += Xp;
+}
+
 #pragma endregion
 
 #pragma region Replication
+
 
 void AGameManager::OnRep_GameStarted() const
 {
@@ -466,30 +548,29 @@ void AGameManager::OnRep_PlayersResolutionResults() const
 	OnPlayersResolutionResultsUpdated.Broadcast();
 }
 
-void AGameManager::OnRep_ConnectedPlayers() const
+void AGameManager::OnRep_AllPlayers(TArray<FPlayerData> PrevAllPlayers) const
 {
+	//Find changed values for delegates
+	for(int i = 0; i < AllPlayers.Num(); i++)
+	{
+		//Ran out of prev entries, stop iterating
+		if(PrevAllPlayers.Num() <= i)
+			break;
+
+		//Call delegate for OnGoldUpdated
+		if(AllPlayers[i].GoldAmount != PrevAllPlayers[i].GoldAmount)
+			OnGoldUpdated.Broadcast(AllPlayers[i], AllPlayers[i].GoldAmount);
+	}
+	
 	OnPlayersUpdated.Broadcast();
 }
 
 #pragma endregion
 
-TArray<AStellarPlayerController*> AGameManager::GetConnectedPlayerControllers() const
+int AGameManager::GetPlayerDataIndex(const FPlayerData& InPlayerData) const
 {
-	TArray<AStellarPlayerController*> PlayerControllers;
-	ConnectedPlayers.GenerateValueArray(PlayerControllers);
-
-	return PlayerControllers;
-}
-
-AStellarPlayerController* AGameManager::GetPlayerControllerByPlayerData(const FPlayerData& PlayerData)
-{
-	for (TTuple<AActor*, AStellarPlayerController*> Kvp : ConnectedPlayers)
-	{
-		if(Kvp.Value->GetPlayerData() == PlayerData)
-			return Kvp.Value;
-	}
-
-	return nullptr;
+	const int Index = AllPlayers.IndexOfByPredicate([InPlayerData](const FPlayerData& PlayerData){ return PlayerData == InPlayerData; });
+	return Index;
 }
 
 TArray<APlanet*> AGameManager::GetPlanetsOwnedByPlayer(const FPlayerData& Player)

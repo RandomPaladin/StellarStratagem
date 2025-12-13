@@ -88,7 +88,6 @@ class STELLARSTRATAGEM_API APlanet : public AActor
 
 public:
 	APlanet();
-	virtual bool IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget, const FVector& SrcLocation) const override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void Setup(AGameManager* Game, int Index);

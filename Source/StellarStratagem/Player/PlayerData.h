@@ -10,6 +10,10 @@ struct FPlayerData
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FString Username;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int GoldAmount = 0;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float TechLevel = 0.f;
 	
 	FPlayerData()
 	{
@@ -20,7 +24,7 @@ struct FPlayerData
 	{
 		Username = InUsername;
 	}
-
+	
 	bool IsValid() const { return !Username.IsEmpty(); }
 	
 	bool operator ==(const FPlayerData& Other) const
@@ -32,6 +36,8 @@ struct FPlayerData
 	{
 		return Username != Other.Username;
 	}
+
+	int GetTechLevel() const { return FMath::Floor(TechLevel); }
 };
 
 FORCEINLINE uint32 GetTypeHash(const FPlayerData& PlayerData)

@@ -1,5 +1,6 @@
 #include "EndTurnAction.h"
 #include "StellarStratagem/Gameplay/GameManager.h"
+#include "StellarStratagem/Player/StellarPlayerController.h"
 
 FActionResult UEndTurnAction::PerformAction(AGameManager* GameManager, AStellarPlayerController* Player)
 {
