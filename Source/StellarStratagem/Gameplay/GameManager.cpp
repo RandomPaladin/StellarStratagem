@@ -1,7 +1,8 @@
 #include "GameManager.h"
 #include "Planet.h"
-#include "GameFramework/PlayerState.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "StellarStratagem/Multiplayer/OnlineGameInstance.h"
 #include "StellarStratagem/Player/StellarPlayerController.h"
 
 #pragma region Setup / Lobby
@@ -25,6 +26,12 @@ void AGameManager::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 
 void AGameManager::BeginPlay()
 {
+	OnlineGameInstance = Cast<UOnlineGameInstance>(UGameplayStatics::GetGameInstance(GetWorld()));
+
+	//Get game code from command args
+	if(HasAuthority())
+		FParse::Value(FCommandLine::Get(), TEXT("gamecode="), GameCode);
+	
 	Super::BeginPlay();
 	
 	OnPlayersUpdated.Broadcast();
@@ -37,22 +44,6 @@ void AGameManager::SetupGame(FString NewGameCode)
 
 void AGameManager::ReceivePlayerDataFromClient(AStellarPlayerController* Player, const FPlayerData& PlayerData)
 {
-	UE_LOG(LogTemp, Log, TEXT("RECEIVED PLAYER DATA IN GAME MANAGER"))
-	
-	//Add player
-	const FPlayerData NewPlayerData = {PlayerData.Username};
-	AllPlayers.AddUnique(NewPlayerData);
-	AActor* PlayerActor = Player;
-	ConnectedPlayers.Add(PlayerActor, Player);
-	Player->SetPlayerDataIndex(AllPlayers.Num() - 1);
-
-	ForceNetUpdate();
-	
-	UE_LOG(LogTemp, Log, TEXT("ADDED PLAYER %s TO GAME"), *NewPlayerData.Username)
-}
-
-void AGameManager::RemovePlayer(AStellarPlayerController* Player)
-{
 	//Ensure adding player is only attempted on the server
 	if(!HasAuthority())
 	{
@@ -60,14 +51,46 @@ void AGameManager::RemovePlayer(AStellarPlayerController* Player)
 		return;
 	}
 	
-	//Remove player
-	AllPlayers.RemoveAll([Player](const FPlayerData& PlayerData) { return PlayerData == Player->GetPlayerData(); });
+	UE_LOG(LogTemp, Log, TEXT("RECEIVED PLAYER DATA IN GAME MANAGER"))
+	
+	//Add player
+	AllPlayers.AddUnique(PlayerData);
 	AActor* PlayerActor = Player;
+	ConnectedPlayers.Add(PlayerActor, Player);
+	Player->SetPlayerDataIndex(AllPlayers.Num() - 1);
+
+	ForceNetUpdate();
+	
+	UE_LOG(LogTemp, Log, TEXT("ADDED PLAYER %s TO GAME"), *PlayerData.Username)
+}
+
+void AGameManager::RemovePlayer(const AStellarPlayerController* Player, FPlayerData ExitingPlayer)
+{
+	UE_LOG(LogTemp, Log, TEXT("REMOVING PLAYER %s FROM GAME"), *ExitingPlayer.Username)
+	
+	//Ensure removing player is only attempted on the server
+	if(!HasAuthority())
+	{
+		UE_LOG(LogTemp, Error, TEXT("TRYING TO REMOVE PLAYER TO GAME OUTSIDE OF SERVER"))
+		return;
+	}
+	
+	//Remove player
+	const AActor* PlayerActor = Player;
 	ConnectedPlayers.Remove(PlayerActor);
+	
+	if(!GameStarted)
+		AllPlayers.RemoveAll([ExitingPlayer](const FPlayerData& PlayerData) { return PlayerData == ExitingPlayer; });
 
 	ForceNetUpdate();
 
-	UE_LOG(LogTemp, Log, TEXT("REMOVED PLAYER %s FROM GAME"), *Player->GetPlayerData().Username)
+	if(ConnectedPlayers.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("NO CONNECTED PLAYERS LEFT, CLOSING GAME"))
+		OnlineGameInstance->ShutdownGame(GameCode);
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("REMOVED PLAYER %s FROM GAME"), *ExitingPlayer.Username)
 }
 
 #pragma endregion
@@ -166,6 +189,8 @@ void AGameManager::StartGame()
 	//Grant starting gold
 	for (const FPlayerData& Player : AllPlayers)
 		AddGold(Player, StartingGold);
+
+	//TODO SAVE STATE TO FILE
 }
 
 void AGameManager::EndTurn(AStellarPlayerController* Player)

@@ -17,6 +17,7 @@ class STELLARSTRATAGEM_API UOnlineGameInstance : public UGameInstance
 	FString ServerEndpointPort = "7777";
 
 	void OnGameCreated(FHttpRequestPtr Request, FHttpResponsePtr Response, bool Success);
+	void OnGameShutDown(FHttpRequestPtr Request, FHttpResponsePtr Response, bool Success);
 
 	UPROPERTY()
 	AStellarPlayerController* InstigatingPlayer;
@@ -26,6 +27,7 @@ class STELLARSTRATAGEM_API UOnlineGameInstance : public UGameInstance
 public:
 	void CreateGame(AStellarPlayerController* Player, const FString& GameCode);
 	void JoinGame(AStellarPlayerController* Player, const FString& GameCode);
+	void ShutdownGame(const FString& GameCode);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsConnected() const;

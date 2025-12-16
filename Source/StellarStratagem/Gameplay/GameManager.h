@@ -6,6 +6,7 @@
 #include "StellarStratagem/Utility/HelperFunctions.h"
 #include "GameManager.generated.h"
 
+class UOnlineGameInstance;
 class UPlanetGradeData;
 class APlanet;
 class AServerManager;
@@ -150,6 +151,9 @@ class STELLARSTRATAGEM_API AGameManager : public AActor
 {
 	GENERATED_BODY()
 
+	UPROPERTY()
+	UOnlineGameInstance* OnlineGameInstance;
+	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	FString GameCode;
 
@@ -209,7 +213,7 @@ public:
 
 	//Lobby
 	void ReceivePlayerDataFromClient(AStellarPlayerController* Player, const FPlayerData& PlayerData);
-	void RemovePlayer(AStellarPlayerController* Player);
+	void RemovePlayer(const AStellarPlayerController* Player, FPlayerData ExitingPlayer);
 
 	//Game
 	void SetupGame(FString NewGameCode);

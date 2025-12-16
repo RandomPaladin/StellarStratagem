@@ -30,6 +30,19 @@ void UOnlineGameInstance::JoinGame(AStellarPlayerController* Player, const FStri
 	SendRequestToServer(RequestBody, "join-game", &UOnlineGameInstance::OnGameCreated);
 }
 
+void UOnlineGameInstance::ShutdownGame(const FString& GameCode)
+{
+	UE_LOG(LogTemp, Warning, TEXT("TRYING TO SHUT DOWN GAME: %s"), *GameCode)
+	
+	const TSharedPtr<FJsonObject> JsonBody = MakeShareable(new FJsonObject());
+	JsonBody->SetStringField("game_code", GameCode);
+	FString RequestBody;
+	const TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+	FJsonSerializer::Serialize(JsonBody.ToSharedRef(), Writer);
+
+	SendRequestToServer(RequestBody, "shutdown-game", &UOnlineGameInstance::OnGameShutDown);
+}
+
 void UOnlineGameInstance::SendRequestToServer(const FString& RequestBody, const FString& FunctionName, void(UOnlineGameInstance::* Callback)(FHttpRequestPtr Request, FHttpResponsePtr Response, bool Success))
 {
 	//Create request
@@ -73,6 +86,30 @@ void UOnlineGameInstance::OnGameCreated(FHttpRequestPtr Request, FHttpResponsePt
 	//Connect to server
 	const FString URL = FString::Printf(TEXT("%s:%d"), *Ip, Port);
 	UGameplayStatics::GetPlayerController(GetWorld(), 0)->ClientTravel(URL, TRAVEL_Absolute);
+}
+
+void UOnlineGameInstance::OnGameShutDown(FHttpRequestPtr Request, FHttpResponsePtr Response, bool Success)
+{
+	if (!Success || !Response.IsValid())
+		return;
+		
+	//Get content
+	const FString Body = Response->GetContentAsString();
+	TSharedPtr<FJsonObject> Json;
+	const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Body);
+	if (!FJsonSerializer::Deserialize(Reader, Json) || !Json.IsValid())
+		return;
+
+	//Handle errors
+	if(Json->HasField("error"))
+	{
+		UE_LOG(LogTemp, Error, TEXT("ERROR: %s"), *Json->GetStringField("error"))
+		return;
+	}
+
+	//Close server
+	UE_LOG(LogTemp, Warning, TEXT("CLOSING SERVER"))
+	FPlatformMisc::RequestExit(false);
 }
 
 bool UOnlineGameInstance::IsConnected() const
