@@ -41,6 +41,9 @@ void ACombatAnimator::DoCombatAnimations()
 	//Ignore if no results
 	if(Results.Num() == 0)
 		return;
+
+	IsBusy = true;
+	OnIsBusyUpdated.Broadcast(IsBusy);
 	
 	ToggleUIUsability(false);
 	ResultIndex = -1;
@@ -56,6 +59,8 @@ void ACombatAnimator::IncrementAnimation()
 	if(ResultIndex >= Results.Num())
 	{
 		ToggleUIUsability(true);
+		IsBusy = false;
+		OnIsBusyUpdated.Broadcast(IsBusy);
 		return;
 	}
 	
