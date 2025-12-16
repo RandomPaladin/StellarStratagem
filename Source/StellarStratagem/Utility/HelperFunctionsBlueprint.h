@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "HelperFunctions.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "StellarStratagem/Player/PlayerData.h"
 #include "HelperFunctionsBlueprint.generated.h"
@@ -25,5 +26,5 @@ class STELLARSTRATAGEM_API UHelperFunctionsBlueprint : public UBlueprintFunction
 	static bool IsUsernameAllowed(const FString& Username, FString& OutResult);
 
 	UFUNCTION(BlueprintPure, meta=(DisplayName="GetLocalUserData"), Category="PlayerData")
-	static ULocalUserSaveGame* GetLocalUserData();
+	static ULocalUserSaveGame* GetLocalUserData() { return UHelperFunctions::GetLocalUserData(); }
 };

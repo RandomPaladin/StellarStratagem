@@ -10,6 +10,7 @@ struct FPlayerData
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FString Username;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	int GoldAmount = 0;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -20,7 +21,7 @@ struct FPlayerData
 		Username = "";
 	}
 
-	FPlayerData(FString InUsername)
+	FPlayerData(FString& InUsername)
 	{
 		Username = InUsername;
 	}
