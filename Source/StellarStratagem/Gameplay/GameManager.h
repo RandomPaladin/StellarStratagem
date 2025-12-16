@@ -208,7 +208,6 @@ public:
 	virtual void BeginPlay() override;
 
 	//Lobby
-	void AddPlayer(AStellarPlayerController* Player) const;
 	void ReceivePlayerDataFromClient(AStellarPlayerController* Player, const FPlayerData& PlayerData);
 	void RemovePlayer(AStellarPlayerController* Player);
 

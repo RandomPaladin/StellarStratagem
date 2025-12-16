@@ -7,6 +7,7 @@
 #include "StellarStratagem/Actions/EndTurnAction.h"
 #include "StellarStratagem/Actions/ProductionDistributionUpdateAction.h"
 #include "StellarStratagem/Actions/SetAttackLineAction.h"
+#include "StellarStratagem/Data/LocalUserSaveGame.h"
 #include "StellarStratagem/Gameplay/GameManager.h"
 #include "StellarStratagem/Gameplay/Planet.h"
 #include "StellarStratagem/Gameplay/ShipAttackLine.h"
@@ -44,6 +45,22 @@ void AStellarPlayerController::BeginPlay()
 
 	OnlineGameInstance = Cast<UOnlineGameInstance>(UGameplayStatics::GetGameInstance(GetWorld()));
 	GameManager = Cast<AGameManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AGameManager::StaticClass()));
+
+	if(!UKismetSystemLibrary::IsDedicatedServer(GetWorld()))
+	{
+		//Set local username
+		const ULocalUserSaveGame* LocalSaveGame = UHelperFunctions::GetLocalUserData();
+		if(LocalSaveGame)
+			SetLocalUsername(LocalSaveGame->Username);
+
+		//Send player data to server
+		if(GameManager)
+		{
+			UE_LOG(LogTemp, Log, TEXT("SENDING PLAYER DATA TO SERVER"))
+			const FPlayerData PlayerData = {LocalUsername};
+			SendPlayerData_Server(PlayerData);
+		}
+	}
 	
 	Super::BeginPlay();
 }
@@ -72,12 +89,6 @@ void AStellarPlayerController::TryStartGame_Server_Implementation()
 }
 
 #pragma endregion
-
-void AStellarPlayerController::AskForPlayerData_Client_Implementation()
-{
-	const FPlayerData PlayerData = {LocalUsername};
-	SendPlayerData_Server(PlayerData);
-}
 
 void AStellarPlayerController::SendPlayerData_Server_Implementation(const FPlayerData& PlayerData)
 {

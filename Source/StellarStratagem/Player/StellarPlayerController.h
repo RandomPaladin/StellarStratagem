@@ -79,10 +79,6 @@ private:
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void TryStartGame_Server();
 
-public:
-	UFUNCTION(Client, Reliable)
-	void AskForPlayerData_Client();
-private:
 	UFUNCTION(Server, Reliable)
 	void SendPlayerData_Server(const FPlayerData& PlayerData);
 
