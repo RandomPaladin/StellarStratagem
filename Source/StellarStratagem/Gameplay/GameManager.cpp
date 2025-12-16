@@ -35,20 +35,6 @@ void AGameManager::SetupGame(FString NewGameCode)
 	GameCode = NewGameCode;
 }
 
-void AGameManager::AddPlayer(AStellarPlayerController* Player) const
-{
-	//Ensure adding player is only attempted on the server
-	if(!HasAuthority())
-	{
-		UE_LOG(LogTemp, Error, TEXT("TRYING TO ADD PLAYER TO GAME OUTSIDE OF SERVER"))
-		return;
-	}
-
-	//Ask player for player data
-	UE_LOG(LogTemp, Log, TEXT("ASKING FOR PLAYER DATA FROM %d"), Player->PlayerState->GetPlayerId())
-	Player->AskForPlayerData_Client();
-}
-
 void AGameManager::ReceivePlayerDataFromClient(AStellarPlayerController* Player, const FPlayerData& PlayerData)
 {
 	UE_LOG(LogTemp, Log, TEXT("RECEIVED PLAYER DATA IN GAME MANAGER"))
