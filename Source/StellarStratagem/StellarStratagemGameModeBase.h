@@ -8,5 +8,4 @@ UCLASS()
 class STELLARSTRATAGEM_API AStellarStratagemGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
-	
 };
