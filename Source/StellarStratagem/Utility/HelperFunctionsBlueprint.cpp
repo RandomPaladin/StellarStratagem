@@ -45,8 +45,3 @@ bool UHelperFunctionsBlueprint::IsUsernameAllowed(const FString& Username, FStri
 
 	return true;
 }
-	
-ULocalUserSaveGame* UHelperFunctionsBlueprint::GetLocalUserData()
-{
-	return UHelperFunctions::GetLocalUserData();
-}

@@ -26,8 +26,6 @@ class STELLARSTRATAGEM_API AStellarPlayerController : public APlayerController
 	//Setup vars
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UWorld> MainGameMap;
-	UPROPERTY()
-	FString CurrentGameCode;
 	
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_PlayerDataIndex)
 	int PlayerDataIndex = -1;
@@ -132,12 +130,11 @@ public:
 
 	//Getters
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FPlayerData GetPlayerData();
+	FPlayerData GetPlayerData() const;
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	APlanet* GetSelectedPlanet();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int GetGold() { return GetPlayerData().GoldAmount; }
-	FString GetCurrentGameCode() const { return CurrentGameCode; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FString GetLocalUsername() const { return LocalUsername; }
 

@@ -4,7 +4,7 @@ import socket, subprocess, sys
 app = Flask(__name__)
 
 SERVER_EXE = r"C:\Users\sokys\Desktop\MYFOLDEROFSTUFF\GameProjects\StellarStrategem\StellarStrategemBuild\WindowsServer\StellarStratagemServer.exe"
-MAP_NAME = "YourMap"
+MAP_NAME = "L_GameServer"
 PUBLIC_IP = "192.168.0.192"
 
 # Stores active games: { game_code : { "port": 7777, "pid": 1234 } }
@@ -20,11 +20,12 @@ def find_free_port():
     return port
 
 
-def start_server_process(port):
+def start_server_process(port, game_code):
     args = [
         SERVER_EXE,
         f"{MAP_NAME}?listen",
         f"-port={port}",
+        f"-gamecode={game_code}",
         "-log"
     ]
 
@@ -49,7 +50,7 @@ def create_game():
         return jsonify({"error": "Game with given name already exists."}), 400
 
     port = find_free_port()
-    pid = start_server_process(port)
+    pid = start_server_process(port, game_code)
 
     ACTIVE_GAMES[game_code] = {
         "port": port,
@@ -79,6 +80,21 @@ def join_game():
         "ip": PUBLIC_IP,
         "port": game["port"]
     })
+
+
+@app.route("/shutdown-game", methods=["POST"])
+def shutdown_game():
+    data = request.get_json(silent=True) or {}
+    game_code = data.get("game_code")
+
+    if not game_code:
+        return jsonify({"error": "Game name is required."}), 400
+
+    game = ACTIVE_GAMES.pop(game_code, None)
+    if not game:
+        return jsonify({"error": "Game with given name not found."}), 404
+
+    return jsonify({"status": "removed"})
 
 
 if __name__ == "__main__":

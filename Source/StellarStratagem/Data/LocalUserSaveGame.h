@@ -14,5 +14,10 @@ public:
 	FString Username;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FString CurrentGameCode;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool IsCurrentGameCreator;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<FString> GameCodes;
 };

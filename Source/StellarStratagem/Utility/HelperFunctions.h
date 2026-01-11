@@ -13,6 +13,8 @@ class STELLARSTRATAGEM_API UHelperFunctions : public UObject
 {
 	GENERATED_BODY()
 
+	static ULocalUserSaveGame* GetExistingOrNewLocalUserData();
+
 public:
 	template<class T, typename Predicate> 
 	static void Where(TArray<T> InArray, OUT TArray<T>& OutArray, Predicate Pred);
@@ -26,7 +28,9 @@ public:
 	template<class T, typename Predicate> 
 	static bool First(const TArray<T> InArray, Predicate Pred, T& OutValue);
 	
-	static void SaveLocalUserData(const FString& Username);
+	static void SaveLocalUsernameData(const FString& Username);
+	static void SaveCurrentGameCodeData(const FString& GameCode);
+	static void SaveCurrentIsGameCreatorData(const bool IsCreator);
 	static ULocalUserSaveGame* GetLocalUserData();
 };
 

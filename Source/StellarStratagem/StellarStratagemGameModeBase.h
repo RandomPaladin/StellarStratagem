@@ -8,4 +8,6 @@ UCLASS()
 class STELLARSTRATAGEM_API AStellarStratagemGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
+
+	virtual void Logout(AController* Exiting) override;
 };

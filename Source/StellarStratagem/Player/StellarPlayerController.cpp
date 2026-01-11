@@ -35,7 +35,7 @@ void AStellarPlayerController::SetPlayerDataIndex(const int NewIndex)
 void AStellarPlayerController::SetLocalUsername(FString NewLocalUsername)
 {
 	LocalUsername = NewLocalUsername;
-	UHelperFunctions::SaveLocalUserData(LocalUsername);
+	UHelperFunctions::SaveLocalUsernameData(LocalUsername);
 }
 
 void AStellarPlayerController::BeginPlay()
@@ -69,16 +69,18 @@ void AStellarPlayerController::BeginPlay()
 
 void AStellarPlayerController::TryCreateGame(const FString& GameCode)
 {
-	CurrentGameCode = GameCode;
-	UE_LOG(LogTemp, Warning, TEXT("SETTING PLAYERS GAME CODE TO %s"), *CurrentGameCode)
+	UHelperFunctions::SaveCurrentGameCodeData(GameCode);
+	UHelperFunctions::SaveCurrentIsGameCreatorData(true);
+	UE_LOG(LogTemp, Warning, TEXT("SETTING PLAYERS GAME CODE TO %s"), *GameCode)
 
 	OnlineGameInstance->CreateGame(this, GameCode);
 }
 
 void AStellarPlayerController::TryJoinGame(const FString& GameCode)
 {
-	CurrentGameCode = GameCode;
-	UE_LOG(LogTemp, Warning, TEXT("SETTING PLAYERS GAME CODE TO %s"), *CurrentGameCode)
+	UHelperFunctions::SaveCurrentGameCodeData(GameCode);
+	UHelperFunctions::SaveCurrentIsGameCreatorData(false);
+	UE_LOG(LogTemp, Warning, TEXT("SETTING PLAYERS GAME CODE TO %s"), *GameCode)
 
 	OnlineGameInstance->JoinGame(this, GameCode);
 }
@@ -118,7 +120,7 @@ void AStellarPlayerController::GoToMainMenu()
 
 #pragma region Gameplay
 
-FPlayerData AStellarPlayerController::GetPlayerData()
+FPlayerData AStellarPlayerController::GetPlayerData() const
 {
 	if(PlayerDataIndex < 0)
 	{
@@ -201,6 +203,9 @@ void AStellarPlayerController::OnPress(const FVector& Loc)
 void AStellarPlayerController::OnPressMoved(const FVector& Loc)
 {
 	if(!IsInputOccluded())
+		return;
+
+	if(!CamActor)
 		return;
 	
 	//Record current touch loc

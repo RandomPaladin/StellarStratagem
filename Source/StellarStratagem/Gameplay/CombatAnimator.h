@@ -5,6 +5,8 @@
 #include "GameFramework/Actor.h"
 #include "CombatAnimator.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIsBusyUpdatedDelegate, bool, NewIsBusy);
+
 UCLASS()
 class STELLARSTRATAGEM_API ACombatAnimator : public AActor
 {
@@ -20,6 +22,9 @@ private:
 	int ResultIndex = -1;
 
 public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool IsBusy = false;
+	
 	UFUNCTION(BlueprintCallable)
 	void DoCombatAnimations();
 	
@@ -33,4 +38,8 @@ protected:
 	void ToggleUIUsability(bool Usable);
 	UFUNCTION(BlueprintCallable)
 	void IncrementAnimation();
+
+public:
+	UPROPERTY(BlueprintAssignable)
+	FOnIsBusyUpdatedDelegate OnIsBusyUpdated;
 };
